@@ -67,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void dispose() {
     _midiSetupSubscription?.cancel();
     _midiDataSubscription?.cancel();
-    // disconnect()
+    // disconnectDevice()
     super.dispose();
   }
 
