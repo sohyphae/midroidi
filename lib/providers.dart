@@ -13,27 +13,16 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
 
   PatchNotifier(this._midiService) : super(RefaceCsPatch());
 
-  // Update app state AND sends the MIDI message with new parameter values
+  // Update app state AND send MIDI message with new parameter values
   void updateCutoff(int newCutoff) {
-    _midiService.devices;
-
     state = state.copyWith(cutoff: newCutoff);
-    // SysEx msg
-    // F0 43 10 7F 1C 03 00 00 09 vv F7
-    final List<int> sysexMessage = [
-      0xF0, // Start of Exclusive
-      0x43, // Yamaha ID
-      0x10, // Device Number (MIDI Channel 1) // CHECK
-      0x7F, // Group Number High
-      0x1C, // Group Number Low
-      0x03, // Model ID (Reface CS)
-      0x00, // Address High
-      0x00, // Address Mid
-      0x09, // Address Low (Filter Cutoff)
-      newCutoff, // Data (the new value)
-      0xF7, // End of Exclusive
+
+    final List<int> controlChangeFilter = [
+      0xB0, // Control change on MIDI channel 1 - todo: enable channel setting in future
+      74, // CC number for filter cutoff
+      newCutoff,
     ];
-    _midiService.sendData(sysexMessage);
+    _midiService.sendData(controlChangeFilter);
   }
 
   // // Later : send all parameters
