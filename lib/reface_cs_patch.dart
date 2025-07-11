@@ -10,6 +10,7 @@ class RefaceCsPatch {
     this.lfoDepth = 0,
     this.lfoSpeed = 0,
     this.portamento = 0,
+    this.volume = 100,
     this.oscType = OscType.multiSaw,
     this.texture = 0,
     this.mod = 0,
@@ -23,7 +24,6 @@ class RefaceCsPatch {
     this.effectType = EffectType.off,
     this.effectDepth = 0,
     this.effectRate = 0,
-    this.volume = 100,
   });
 
   // LFO section

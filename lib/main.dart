@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
-import 'midi_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -23,34 +24,42 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  ConsumerState<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  final MidiService _midiService = MidiService();
-  StreamSubscription<String>? _midiSetupSubscription;
-  StreamSubscription<MidiPacket>? _midiDataSubscription;
-  final List<String> _receivedData = [];
+class _MyHomePageState extends ConsumerState<MyHomePage> {
   List<MidiDevice> _midiDevices = [];
   MidiDevice? _selectedMidiDevice;
+  final List<String> _receivedData = [];
+
+  StreamSubscription<String>? _midiSetupSubscription;
+  StreamSubscription<MidiPacket>? _midiDataSubscription;
 
   @override
   void initState() {
     super.initState();
+    final midiService = ref.read(midiServiceProvider);
     _refreshDevices();
 
-    // Listen for midi setup changes (devices dis/connecting)
-    _midiSetupSubscription = _midiService.onMidiSetupChanged?.listen((data) {
+    _midiSetupSubscription = midiService.onMidiSetupChanged?.listen((data) {
       // _refreshDevices();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data)));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(data)));
+      }
     });
 
-    // Listen & save latest incoming midi msgs to state
-    _midiDataSubscription = _midiService.onMidiDataReceived?.listen((packet) {
+    _midiDataSubscription = midiService.onMidiDataReceived?.listen((packet) {
+      // Filter out noisy
+      if (packet.data.length == 1 &&
+          (packet.data[0] == 248 || (packet.data[0] == 254))) {
+        return;
+      }
       setState(() {
         _receivedData.insert(
           0,
@@ -72,7 +81,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _refreshDevices() async {
-    List<MidiDevice> devices = await _midiService.devices;
+    final midiService = ref.read(midiServiceProvider);
+    List<MidiDevice> devices = await midiService.devices;
     setState(() {
       _midiDevices = devices;
       if (_midiDevices.isNotEmpty) {
@@ -83,7 +93,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _connect() {
     if (_selectedMidiDevice != null) {
-      _midiService.connectToDevice(_selectedMidiDevice!);
+      final midiService = ref.read(midiServiceProvider);
+      midiService.connectToDevice(_selectedMidiDevice!);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Connecting to ${_selectedMidiDevice!.name}...'),
@@ -94,14 +105,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // filter noisy msgs from test device
-    final showData = _receivedData.isNotEmpty
-        ? !['[248]', '[254]'].any((elem) => _receivedData[0].contains(elem))
-        : true;
+    // Watch the patch provider for changes
+    final patch = ref.watch(patchProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Midroidi: POC'),
+        title: const Text('Midroidi Editor'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -141,17 +150,29 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: _selectedMidiDevice != null ? _connect : null,
               child: const Text('Connect'),
             ),
-            const SizedBox(height: 20),
-            const Divider(),
+            const Divider(height: 30),
+            Text(
+              'Filter Cutoff: ${patch.cutoff}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            Slider(
+              value: patch.cutoff.toDouble(),
+              min: 0,
+              max: 127,
+              divisions: 127,
+              label: patch.cutoff.toString(),
+              onChanged: (double value) {
+                ref.read(patchProvider.notifier).updateCutoff(value.toInt());
+              },
+            ),
+
+            const Divider(height: 30),
             const Text('Received data:'),
             Expanded(
               child: ListView.builder(
                 itemCount: _receivedData.length,
                 itemBuilder: (context, index) {
-                  if (showData) {
-                    print(_receivedData[0]);
-                  }
-                  return showData ? Text(_receivedData[index]) : Container();
+                  return Text(_receivedData[index]);
                 },
               ),
             ),
