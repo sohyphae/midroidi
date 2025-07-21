@@ -165,6 +165,21 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                 ref.read(patchProvider.notifier).updateCutoff(value.toInt());
               },
             ),
+            const SizedBox(height: 20),
+            Text(
+              'Filter Resonance: ${patch.resonance}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            Slider(
+              value: patch.resonance.toDouble(),
+              min: 0,
+              max: 127,
+              divisions: 127,
+              label: patch.resonance.toString(),
+              onChanged: (double value) {
+                ref.read(patchProvider.notifier).updateResonance(value.toInt());
+              },
+            ),
 
             const Divider(height: 30),
             const Text('Received data:'),
