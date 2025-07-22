@@ -13,45 +13,117 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
 
   final MidiService _midiService;
 
-  // Update app state AND send MIDI message with new parameter values
+  // Base SysEx message for Reface CS parameter change
+  // F0 43 10 7F 1C 03 hh mm ll dd F7
+  final List<int> _baseSysEx = [
+    0xF0, // Start of SysEx
+    0x43, // Yamaha ID
+    0x10, // Device Number
+    0x7F, // Group Number High
+    0x1C, // Group Number Low
+    0x03, // Model ID
+    0x30, // Address High
+    0x00, // Address Mid
+    0x00, // Address Low
+    0x00, // Data
+    0xF7, // End of SysEx
+  ];
+
+  void _sendSysEx(int addressLow, int data) {
+    final message = List<int>.from(_baseSysEx);
+    message[8] = addressLow; // Parameter to change
+    message[9] = data; // Change value
+    _midiService.sendData(message);
+  }
+
+  void updateVolume(int newVolume) {
+    state = state.copyWith(volume: newVolume);
+    _sendSysEx(0x00, newVolume);
+  }
+
+  void updateLfoAssign(LfoType newLfoAssign) {
+    state = state.copyWith(lfoType: newLfoAssign);
+    _sendSysEx(0x02, newLfoAssign.index);
+  }
+
+  void updateLfoDepth(int newLfoDepth) {
+    state = state.copyWith(lfoDepth: newLfoDepth);
+    _sendSysEx(0x03, newLfoDepth);
+  }
+
+  void updateLfoSpeed(int newLfoSpeed) {
+    state = state.copyWith(lfoSpeed: newLfoSpeed);
+    _sendSysEx(0x04, newLfoSpeed);
+  }
+
+  void updatePortamento(int newPortamento) {
+    state = state.copyWith(portamento: newPortamento);
+    _sendSysEx(0x05, newPortamento);
+  }
+
+  void updateOscType(OscType newOscType) {
+    state = state.copyWith(oscType: newOscType);
+    _sendSysEx(0x06, newOscType.index);
+  }
+
+  void updateOscTexture(int newTexture) {
+    state = state.copyWith(texture: newTexture);
+    _sendSysEx(0x07, newTexture);
+  }
+
+  void updateOscMod(int newMod) {
+    state = state.copyWith(mod: newMod);
+    _sendSysEx(0x08, newMod);
+  }
+
   void updateCutoff(int newCutoff) {
     state = state.copyWith(cutoff: newCutoff);
-
-    // F0 43 10 7F 1C 03 30 00 09 dd F7
-    final List<int> sysexMessage = [
-      0xF0, // Start of SysEx
-      0x43, // // Yamaha ID
-      0x10, // Device Number
-      0x7F, // Group Number High
-      0x1C, // Group Number Low
-      0x03, // Model ID
-      0x30, // Address High
-      0x00, // Address Mid
-      0x09, // Address Low
-      newCutoff, // Data
-      0xF7, // End of SysEx
-    ];
-    _midiService.sendData(sysexMessage);
+    _sendSysEx(0x09, newCutoff);
   }
 
   void updateResonance(int newResonance) {
     state = state.copyWith(resonance: newResonance);
+    _sendSysEx(0x0A, newResonance);
+  }
 
-    // F0 43 10 7F 1C 03 30 00 0A dd F7
-    final List<int> sysexMessage = [
-      0xF0, // Start of SysEx
-      0x43, // Yamaha ID
-      0x10, // Device Number
-      0x7F, // Group Number High
-      0x1C, // Group Number Low
-      0x03, // Model ID
-      0x30, // Address High
-      0x00, // Address Mid
-      0x0A, // Address Low
-      newResonance, // Data
-      0xF7, // End of SysEx
-    ];
-    _midiService.sendData(sysexMessage);
+  void updateEgBalance(int newEgBalance) {
+    state = state.copyWith(fegAegBalance: newEgBalance);
+    _sendSysEx(0x0B, newEgBalance);
+  }
+
+  void updateEgAttack(int newAttack) {
+    state = state.copyWith(attack: newAttack);
+    _sendSysEx(0x0C, newAttack);
+  }
+
+  void updateEgDecay(int newDecay) {
+    state = state.copyWith(decay: newDecay);
+    _sendSysEx(0x0D, newDecay);
+  }
+
+  void updateEgSustain(int newSustain) {
+    state = state.copyWith(sustain: newSustain);
+    _sendSysEx(0x0E, newSustain);
+  }
+
+  void updateEgRelease(int newRelease) {
+    state = state.copyWith(release: newRelease);
+    _sendSysEx(0x0F, newRelease);
+  }
+
+  void updateEffectType(EffectType newEffectType) {
+    state = state.copyWith(effectType: newEffectType);
+    _sendSysEx(0x10, newEffectType.index);
+  }
+
+  void updateEffectDepth(int newEffectDepth) {
+    state = state.copyWith(effectDepth: newEffectDepth);
+    _sendSysEx(0x11, newEffectDepth);
+  }
+
+  void updateEffectRate(int newEffectRate) {
+    state = state.copyWith(effectRate: newEffectRate);
+    _sendSysEx(0x12, newEffectRate);
   }
 
   // // Later : send all parameters

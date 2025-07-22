@@ -1,6 +1,6 @@
 enum LfoType { off, amp, filter, pitch, osc }
 
-enum OscType { multiSaw, pulse, oscSync, ringMod, freqMod }
+enum OscType { freqMod, ringMod, oscSync, pulse, multiSaw }
 
 enum EffectType { distortion, chorusFlanger, phaser, delay, off }
 

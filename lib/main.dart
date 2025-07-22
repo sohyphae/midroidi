@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers.dart';
+import 'reface_cs_patch.dart';
+import 'components/parameter_slider.dart';
+import 'components/parameter_dropdown.dart';
+import 'components/section_header.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -34,7 +38,6 @@ class MyHomePage extends ConsumerStatefulWidget {
 class _MyHomePageState extends ConsumerState<MyHomePage> {
   List<MidiDevice> _midiDevices = [];
   MidiDevice? _selectedMidiDevice;
-  final List<String> _receivedData = [];
 
   StreamSubscription<String>? _midiSetupSubscription;
   StreamSubscription<MidiPacket>? _midiDataSubscription;
@@ -60,15 +63,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           (packet.data[0] == 248 || (packet.data[0] == 254))) {
         return;
       }
-      setState(() {
-        _receivedData.insert(
-          0,
-          'Received: ${packet.data.toString()} from ${packet.device.name}',
-        );
-        if (_receivedData.length > 5) {
-          _receivedData.removeLast();
-        }
-      });
+      print('Received: ${packet.data.toString()} from ${packet.device.name}');
     });
   }
 
@@ -151,44 +146,162 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
               child: const Text('Connect'),
             ),
             const Divider(height: 30),
-            Text(
-              'Filter Cutoff: ${patch.cutoff}',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            Slider(
-              value: patch.cutoff.toDouble(),
-              min: 0,
-              max: 127,
-              divisions: 127,
-              label: patch.cutoff.toString(),
-              onChanged: (double value) {
-                ref.read(patchProvider.notifier).updateCutoff(value.toInt());
-              },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Filter Resonance: ${patch.resonance}',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            Slider(
-              value: patch.resonance.toDouble(),
-              min: 0,
-              max: 127,
-              divisions: 127,
-              label: patch.resonance.toString(),
-              onChanged: (double value) {
-                ref.read(patchProvider.notifier).updateResonance(value.toInt());
-              },
-            ),
-
-            const Divider(height: 30),
-            const Text('Received data:'),
             Expanded(
-              child: ListView.builder(
-                itemCount: _receivedData.length,
-                itemBuilder: (context, index) {
-                  return Text(_receivedData[index]);
-                },
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ParameterSlider(
+                      title: 'Volume',
+                      value: patch.volume,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateVolume(value.toInt()),
+                    ),
+                    const Divider(),
+                    const SectionHeader('LFO'),
+                    ParameterDropdown<LfoType>(
+                      value: patch.lfoType,
+                      items: LfoType.values,
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref
+                              .read(patchProvider.notifier)
+                              .updateLfoAssign(value);
+                        }
+                      },
+                    ),
+                    ParameterSlider(
+                      title: 'LFO Depth',
+                      value: patch.lfoDepth,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateLfoDepth(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'LFO Speed',
+                      value: patch.lfoSpeed,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateLfoSpeed(value.toInt()),
+                    ),
+                    const Divider(),
+                    const SectionHeader('Portamento'),
+                    // Synth controls are more quantized here, may want to fix later
+                    ParameterSlider(
+                      title: 'Portamento',
+                      value: patch.portamento,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updatePortamento(value.toInt()),
+                    ),
+                    const Divider(),
+                    const SectionHeader('Oscillator'),
+                    ParameterDropdown<OscType>(
+                      value: patch.oscType,
+                      items: OscType.values,
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(patchProvider.notifier).updateOscType(value);
+                        }
+                      },
+                    ),
+                    ParameterSlider(
+                      title: 'OSC Texture',
+                      value: patch.texture,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateOscTexture(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'OSC Mod',
+                      value: patch.mod,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateOscMod(value.toInt()),
+                    ),
+                    const Divider(),
+                    const SectionHeader('Filter'),
+                    ParameterSlider(
+                      title: 'Cutoff',
+                      value: patch.cutoff,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateCutoff(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'Resonance',
+                      value: patch.resonance,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateResonance(value.toInt()),
+                    ),
+                    const Divider(),
+                    const SectionHeader('Envelope Generator'),
+                    ParameterSlider(
+                      title: 'EG Balance',
+                      value: patch.fegAegBalance,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEgBalance(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'Attack',
+                      value: patch.attack,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEgAttack(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'Decay',
+                      value: patch.decay,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEgDecay(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'Sustain',
+                      value: patch.sustain,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEgSustain(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'Release',
+                      value: patch.release,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEgRelease(value.toInt()),
+                    ),
+                    const Divider(),
+                    const SectionHeader('Effect'),
+                    ParameterDropdown<EffectType>(
+                      value: patch.effectType,
+                      items: EffectType.values,
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref
+                              .read(patchProvider.notifier)
+                              .updateEffectType(value);
+                        }
+                      },
+                    ),
+                    ParameterSlider(
+                      title: 'Effect Depth',
+                      value: patch.effectDepth,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEffectDepth(value.toInt()),
+                    ),
+                    ParameterSlider(
+                      title: 'Effect Rate',
+                      value: patch.effectRate,
+                      onChanged: (value) => ref
+                          .read(patchProvider.notifier)
+                          .updateEffectRate(value.toInt()),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
