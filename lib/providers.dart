@@ -13,6 +13,60 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
 
   final MidiService _midiService;
 
+  // TODO: Reface CS can read but not transmit vol data, consider how to handle in UI?
+  void updateVolumeState(int newVolume) =>
+      state = state.copyWith(volume: newVolume);
+
+  void updateLfoAssignState(LfoType newLfoAssign) =>
+      state = state.copyWith(lfoType: newLfoAssign);
+
+  void updateLfoDepthState(int newLfoDepth) =>
+      state = state.copyWith(lfoDepth: newLfoDepth);
+
+  void updateLfoSpeedState(int newLfoSpeed) =>
+      state = state.copyWith(lfoSpeed: newLfoSpeed);
+
+  void updatePortamentoState(int newPortamento) =>
+      state = state.copyWith(portamento: newPortamento);
+
+  void updateOscTypeState(OscType newOscType) =>
+      state = state.copyWith(oscType: newOscType);
+
+  void updateOscTextureState(int newTexture) =>
+      state = state.copyWith(texture: newTexture);
+
+  void updateOscModState(int newMod) => state = state.copyWith(mod: newMod);
+
+  void updateCutoffState(int newCutoff) =>
+      state = state.copyWith(cutoff: newCutoff);
+
+  void updateResonanceState(int newResonance) =>
+      state = state.copyWith(resonance: newResonance);
+
+  void updateEgBalanceState(int newEgBalance) =>
+      state = state.copyWith(fegAegBalance: newEgBalance);
+
+  void updateEgAttackState(int newAttack) =>
+      state = state.copyWith(attack: newAttack);
+
+  void updateEgDecayState(int newDecay) =>
+      state = state.copyWith(decay: newDecay);
+
+  void updateEgSustainState(int newSustain) =>
+      state = state.copyWith(sustain: newSustain);
+
+  void updateEgReleaseState(int newRelease) =>
+      state = state.copyWith(release: newRelease);
+
+  void updateEffectTypeState(EffectType newEffectType) =>
+      state = state.copyWith(effectType: newEffectType);
+
+  void updateEffectDepthState(int newEffectDepth) =>
+      state = state.copyWith(effectDepth: newEffectDepth);
+
+  void updateEffectRateState(int newEffectRate) =>
+      state = state.copyWith(effectRate: newEffectRate);
+
   // Base SysEx message for Reface CS parameter change
   // F0 43 10 7F 1C 03 hh mm ll dd F7
   final List<int> _baseSysEx = [
@@ -36,93 +90,94 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
     _midiService.sendData(message);
   }
 
+  // Send SysEx
   void updateVolume(int newVolume) {
-    state = state.copyWith(volume: newVolume);
+    updateVolumeState(newVolume);
     _sendSysEx(0x00, newVolume);
   }
 
   void updateLfoAssign(LfoType newLfoAssign) {
-    state = state.copyWith(lfoType: newLfoAssign);
+    updateLfoAssignState(newLfoAssign);
     _sendSysEx(0x02, newLfoAssign.index);
   }
 
   void updateLfoDepth(int newLfoDepth) {
-    state = state.copyWith(lfoDepth: newLfoDepth);
+    updateLfoDepthState(newLfoDepth);
     _sendSysEx(0x03, newLfoDepth);
   }
 
   void updateLfoSpeed(int newLfoSpeed) {
-    state = state.copyWith(lfoSpeed: newLfoSpeed);
+    updateLfoSpeedState(newLfoSpeed);
     _sendSysEx(0x04, newLfoSpeed);
   }
 
   void updatePortamento(int newPortamento) {
-    state = state.copyWith(portamento: newPortamento);
+    updatePortamentoState(newPortamento);
     _sendSysEx(0x05, newPortamento);
   }
 
   void updateOscType(OscType newOscType) {
-    state = state.copyWith(oscType: newOscType);
+    updateOscTypeState(newOscType);
     _sendSysEx(0x06, newOscType.index);
   }
 
   void updateOscTexture(int newTexture) {
-    state = state.copyWith(texture: newTexture);
+    updateOscTextureState(newTexture);
     _sendSysEx(0x07, newTexture);
   }
 
   void updateOscMod(int newMod) {
-    state = state.copyWith(mod: newMod);
+    updateOscModState(newMod);
     _sendSysEx(0x08, newMod);
   }
 
   void updateCutoff(int newCutoff) {
-    state = state.copyWith(cutoff: newCutoff);
+    updateCutoffState(newCutoff);
     _sendSysEx(0x09, newCutoff);
   }
 
   void updateResonance(int newResonance) {
-    state = state.copyWith(resonance: newResonance);
+    updateResonanceState(newResonance);
     _sendSysEx(0x0A, newResonance);
   }
 
   void updateEgBalance(int newEgBalance) {
-    state = state.copyWith(fegAegBalance: newEgBalance);
+    updateEgBalanceState(newEgBalance);
     _sendSysEx(0x0B, newEgBalance);
   }
 
   void updateEgAttack(int newAttack) {
-    state = state.copyWith(attack: newAttack);
+    updateEgAttackState(newAttack);
     _sendSysEx(0x0C, newAttack);
   }
 
   void updateEgDecay(int newDecay) {
-    state = state.copyWith(decay: newDecay);
+    updateEgDecayState(newDecay);
     _sendSysEx(0x0D, newDecay);
   }
 
   void updateEgSustain(int newSustain) {
-    state = state.copyWith(sustain: newSustain);
+    updateEgSustainState(newSustain);
     _sendSysEx(0x0E, newSustain);
   }
 
   void updateEgRelease(int newRelease) {
-    state = state.copyWith(release: newRelease);
+    updateEgReleaseState(newRelease);
     _sendSysEx(0x0F, newRelease);
   }
 
   void updateEffectType(EffectType newEffectType) {
-    state = state.copyWith(effectType: newEffectType);
+    updateEffectTypeState(newEffectType);
     _sendSysEx(0x10, newEffectType.index);
   }
 
   void updateEffectDepth(int newEffectDepth) {
-    state = state.copyWith(effectDepth: newEffectDepth);
+    updateEffectDepthState(newEffectDepth);
     _sendSysEx(0x11, newEffectDepth);
   }
 
   void updateEffectRate(int newEffectRate) {
-    state = state.copyWith(effectRate: newEffectRate);
+    updateEffectRateState(newEffectRate);
     _sendSysEx(0x12, newEffectRate);
   }
 

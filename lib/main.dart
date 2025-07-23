@@ -63,8 +63,76 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           (packet.data[0] == 248 || (packet.data[0] == 254))) {
         return;
       }
+      _handleControlChange(packet.data);
       print('Received: ${packet.data.toString()} from ${packet.device.name}');
     });
+  }
+
+  void _handleControlChange(List<int> data) {
+    // CC for now for live param tweaks, may try SysEx later?
+    // Return when not CC message, condition 2 filters when not a CC message on any channel
+    if (data.length < 3 || (data[0] & 0xF0) != 0xB0) {
+      return;
+    }
+
+    final controlChangeNumber = data[1];
+    final value = data[2];
+
+    final patchNotifier = ref.read(patchProvider.notifier);
+
+    switch (controlChangeNumber) {
+      case 78:
+        patchNotifier.updateLfoAssignState(LfoType.values[value ~/ 26]);
+        break;
+      case 77:
+        patchNotifier.updateLfoDepth(value);
+        break;
+      case 76:
+        patchNotifier.updateLfoSpeed(value);
+        break;
+      case 20:
+        patchNotifier.updatePortamento(value);
+        break;
+      case 80:
+        patchNotifier.updateOscTypeState(OscType.values[value ~/ 26]);
+        break;
+      case 81:
+        patchNotifier.updateOscTextureState(value);
+        break;
+      case 82:
+        patchNotifier.updateOscModState(value);
+        break;
+      case 74:
+        patchNotifier.updateCutoffState(value);
+        break;
+      case 71:
+        patchNotifier.updateResonanceState(value);
+        break;
+      case 83:
+        patchNotifier.updateEgBalanceState(value);
+        break;
+      case 73:
+        patchNotifier.updateEgAttackState(value);
+        break;
+      case 75:
+        patchNotifier.updateEgDecayState(value);
+        break;
+      case 79:
+        patchNotifier.updateEgSustainState(value);
+        break;
+      case 72:
+        patchNotifier.updateEgReleaseState(value);
+        break;
+      case 17:
+        patchNotifier.updateEffectTypeState(EffectType.values[value ~/ 26]);
+        break;
+      case 18:
+        patchNotifier.updateEffectDepthState(value);
+        break;
+      case 19:
+        patchNotifier.updateEffectRateState(value);
+        break;
+    }
   }
 
   @override
@@ -199,7 +267,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                     const SectionHeader('Oscillator'),
                     ParameterDropdown<OscType>(
                       value: patch.oscType,
-                      items: OscType.values,
+                      items: OscType.values.reversed.toList(),
                       onChanged: (value) {
                         if (value != null) {
                           ref.read(patchProvider.notifier).updateOscType(value);
