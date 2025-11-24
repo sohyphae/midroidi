@@ -31,4 +31,9 @@ class MidiService {
   void sendData(List<int> data) {
     _midiCommand.sendData(Uint8List.fromList(data));
   }
+
+  // request bulk dump of the current patch from the reface
+  void requestPatchDump() {
+    sendData([0xF0, 0x43, 0x20, 0x7F, 0x1C, 0x03, 0x0E, 0x0F, 0x00, 0xF7]);
+  }
 }

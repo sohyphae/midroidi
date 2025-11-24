@@ -41,15 +41,14 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
 
   StreamSubscription<String>? _midiSetupSubscription;
   StreamSubscription<MidiPacket>? _midiDataSubscription;
+  final List<int> _sysexBuffer = [];
 
   @override
   void initState() {
     super.initState();
     final midiService = ref.read(midiServiceProvider);
     _refreshDevices();
-
     _midiSetupSubscription = midiService.onMidiSetupChanged?.listen((data) {
-      // _refreshDevices();
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -58,14 +57,51 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
     });
 
     _midiDataSubscription = midiService.onMidiDataReceived?.listen((packet) {
-      // Filter out noisy
+      // Filter out noisy MIDI clock messages
       if (packet.data.length == 1 &&
-          (packet.data[0] == 248 || (packet.data[0] == 254))) {
+          (packet.data[0] == 248 || packet.data[0] == 254)) {
         return;
       }
       _handleControlChange(packet.data);
+      _handleSysEx(packet.data);
       print('Received: ${packet.data.toString()} from ${packet.device.name}');
     });
+  }
+
+  void _handleSysEx(List<int> data) {
+    // Reface doesn't send a single 61 byte SysEx msg. Instead, sends patch
+    // data sequence of three separate SysEx msgs:
+    // 1) 13-byte header msg
+    // 2) 35-byte msg with 22 bytes of patch data
+    // 3) 13-byte footer msg
+    // This logic specifically targets the 35-byte msg
+    if (data.isNotEmpty) {
+      // SysEx msg start byte
+      if (data[0] == 0xF0) {
+        _sysexBuffer.clear();
+        _sysexBuffer.addAll(data);
+      } else if (_sysexBuffer.isNotEmpty) {
+        // continue adding to the buffer
+        _sysexBuffer.addAll(data);
+      }
+      // check for SysEx end byte
+      if (_sysexBuffer.isNotEmpty && _sysexBuffer.last == 0xF7) {
+        // check for the specific 35-byte tone data message
+        if (_sysexBuffer.length == 35 &&
+            _sysexBuffer[1] == 0x43 &&
+            _sysexBuffer[8] == 0x30) {
+          // this is the bulk dump! extract the relevant data (22 bytes)
+          // Tone data starts at index 11 and is 22 bytes long
+          final toneData = _sysexBuffer.sublist(11, 33);
+          ref.read(patchProvider.notifier).updateFromBulkDump(toneData);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Patch received from Reface CS')),
+          );
+        }
+        // clear after processing bulk dump
+        _sysexBuffer.clear();
+      }
+    }
   }
 
   void _handleControlChange(List<int> data) {
@@ -158,6 +194,12 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
     if (_selectedMidiDevice != null) {
       final midiService = ref.read(midiServiceProvider);
       midiService.connectToDevice(_selectedMidiDevice!);
+
+      // Delay to allow the connection to establish before sending msg
+      Future.delayed(const Duration(milliseconds: 500), () {
+        midiService.requestPatchDump();
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Connecting to ${_selectedMidiDevice!.name}...'),

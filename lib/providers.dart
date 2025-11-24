@@ -185,6 +185,52 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
   // void loadPatch(RefaceCsPatch patch) {
   //   state = patch;
   // }
+
+  void updateFromBulkDump(List<int> data) {
+    state = state.copyWith(
+      // note in manual: "[vol] can be set only via MIDI" :| handle with cc later
+      volume: data[0], // not working
+      lfoType: LfoType.values[data[2]],
+      lfoDepth: data[3],
+      lfoSpeed: data[4],
+      portamento: data[5],
+      oscType: OscType.values[data[6]],
+      texture: data[7],
+      mod: data[8],
+      cutoff: data[9],
+      resonance: data[10],
+      fegAegBalance: data[11],
+      attack: data[12],
+      decay: data[13],
+      sustain: data[14],
+      release: data[15],
+      effectType: EffectType.values[data[16]],
+      effectDepth: data[17],
+      effectRate: data[18],
+    );
+
+    print('''
+        Patch: 
+          Volume: ${state.volume},
+          LFO Type: ${state.lfoType},
+          LFO Depth: ${state.lfoDepth},
+          LFO Speed: ${state.lfoSpeed},
+          Portamento: ${state.portamento},
+          OSC Type: ${state.oscType},
+          Texture: ${state.texture},
+          Mod: ${state.mod},
+          Cutoff: ${state.cutoff},
+          Resonance: ${state.resonance},
+          EG Balance: ${state.fegAegBalance},
+          Attack: ${state.attack},
+          Decay: ${state.decay},
+          Sustain: ${state.sustain},
+          Release: ${state.release},
+          Effect Type: ${state.effectType},
+          Effect Depth: ${state.effectDepth},
+          Effect Rate: ${state.effectRate},
+        ''');
+  }
 }
 
 final patchProvider = StateNotifierProvider<PatchNotifier, RefaceCsPatch>((
