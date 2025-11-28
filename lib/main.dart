@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers.dart';
+import 'providers/midi_provider.dart';
+import 'providers/patch_provider.dart';
 import 'reface_cs_patch.dart';
 import 'components/parameter_slider.dart';
 import 'components/parameter_dropdown.dart';
@@ -28,190 +28,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends ConsumerStatefulWidget {
+class MyHomePage extends ConsumerWidget {
   const MyHomePage({super.key});
 
   @override
-  ConsumerState<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends ConsumerState<MyHomePage> {
-  List<MidiDevice> _midiDevices = [];
-  MidiDevice? _selectedMidiDevice;
-
-  StreamSubscription<String>? _midiSetupSubscription;
-  StreamSubscription<MidiPacket>? _midiDataSubscription;
-  final List<int> _sysexBuffer = [];
-
-  @override
-  void initState() {
-    super.initState();
-    final midiService = ref.read(midiServiceProvider);
-    _refreshDevices();
-    _midiSetupSubscription = midiService.onMidiSetupChanged?.listen((data) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(data)));
-      }
-    });
-
-    _midiDataSubscription = midiService.onMidiDataReceived?.listen((packet) {
-      // Filter out noisy MIDI clock messages
-      if (packet.data.length == 1 &&
-          (packet.data[0] == 248 || packet.data[0] == 254)) {
-        return;
-      }
-      _handleControlChange(packet.data);
-      _handleSysEx(packet.data);
-      print('Received: ${packet.data.toString()} from ${packet.device.name}');
-    });
-  }
-
-  void _handleSysEx(List<int> data) {
-    // Reface doesn't send a single 61 byte SysEx msg. Instead, sends patch
-    // data sequence of three separate SysEx msgs:
-    // 1) 13-byte header msg
-    // 2) 35-byte msg with 22 bytes of patch data
-    // 3) 13-byte footer msg
-    // This logic specifically targets the 35-byte msg
-    if (data.isNotEmpty) {
-      // SysEx msg start byte
-      if (data[0] == 0xF0) {
-        _sysexBuffer.clear();
-        _sysexBuffer.addAll(data);
-      } else if (_sysexBuffer.isNotEmpty) {
-        // continue adding to the buffer
-        _sysexBuffer.addAll(data);
-      }
-      // check for SysEx end byte
-      if (_sysexBuffer.isNotEmpty && _sysexBuffer.last == 0xF7) {
-        // check for the specific 35-byte tone data message
-        if (_sysexBuffer.length == 35 &&
-            _sysexBuffer[1] == 0x43 &&
-            _sysexBuffer[8] == 0x30) {
-          // this is the bulk dump! extract the relevant data (22 bytes)
-          // Tone data starts at index 11 and is 22 bytes long
-          final toneData = _sysexBuffer.sublist(11, 33);
-          ref.read(patchProvider.notifier).updateFromBulkDump(toneData);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Patch received from Reface CS')),
-          );
-        }
-        // clear after processing bulk dump
-        _sysexBuffer.clear();
-      }
-    }
-  }
-
-  void _handleControlChange(List<int> data) {
-    // CC for now for live param tweaks, may try SysEx later?
-    // Return when not CC message, condition 2 filters when not a CC message on any channel
-    if (data.length < 3 || (data[0] & 0xF0) != 0xB0) {
-      return;
-    }
-
-    final controlChangeNumber = data[1];
-    final value = data[2];
-
-    final patchNotifier = ref.read(patchProvider.notifier);
-
-    switch (controlChangeNumber) {
-      case 78:
-        patchNotifier.updateLfoAssignState(LfoType.values[value ~/ 26]);
-        break;
-      case 77:
-        patchNotifier.updateLfoDepth(value);
-        break;
-      case 76:
-        patchNotifier.updateLfoSpeed(value);
-        break;
-      case 20:
-        patchNotifier.updatePortamento(value);
-        break;
-      case 80:
-        patchNotifier.updateOscTypeState(OscType.values[value ~/ 26]);
-        break;
-      case 81:
-        patchNotifier.updateOscTextureState(value);
-        break;
-      case 82:
-        patchNotifier.updateOscModState(value);
-        break;
-      case 74:
-        patchNotifier.updateCutoffState(value);
-        break;
-      case 71:
-        patchNotifier.updateResonanceState(value);
-        break;
-      case 83:
-        patchNotifier.updateEgBalanceState(value);
-        break;
-      case 73:
-        patchNotifier.updateEgAttackState(value);
-        break;
-      case 75:
-        patchNotifier.updateEgDecayState(value);
-        break;
-      case 79:
-        patchNotifier.updateEgSustainState(value);
-        break;
-      case 72:
-        patchNotifier.updateEgReleaseState(value);
-        break;
-      case 17:
-        patchNotifier.updateEffectTypeState(EffectType.values[value ~/ 26]);
-        break;
-      case 18:
-        patchNotifier.updateEffectDepthState(value);
-        break;
-      case 19:
-        patchNotifier.updateEffectRateState(value);
-        break;
-    }
-  }
-
-  @override
-  void dispose() {
-    _midiSetupSubscription?.cancel();
-    _midiDataSubscription?.cancel();
-    // disconnectDevice()
-    super.dispose();
-  }
-
-  void _refreshDevices() async {
-    final midiService = ref.read(midiServiceProvider);
-    List<MidiDevice> devices = await midiService.devices;
-    setState(() {
-      _midiDevices = devices;
-      if (_midiDevices.isNotEmpty) {
-        _selectedMidiDevice = _midiDevices[0];
-      }
-    });
-  }
-
-  void _connect() {
-    if (_selectedMidiDevice != null) {
-      final midiService = ref.read(midiServiceProvider);
-      midiService.connectToDevice(_selectedMidiDevice!);
-
-      // Delay to allow the connection to establish before sending msg
-      Future.delayed(const Duration(milliseconds: 500), () {
-        midiService.requestPatchDump();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Connecting to ${_selectedMidiDevice!.name}...'),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Watch the patch provider for changes
+  Widget build(BuildContext context, WidgetRef ref) {
+    final midiState = ref.watch(midiStateProvider);
     final patch = ref.watch(patchProvider);
+
+    final MidiDevice? selectedDevice = midiState.selectedDevice;
 
     return Scaffold(
       appBar: AppBar(
@@ -220,7 +45,8 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _refreshDevices,
+            onPressed: () =>
+                ref.read(midiStateProvider.notifier).refreshDevices(),
             tooltip: 'Refresh devices',
           ),
         ],
@@ -232,15 +58,13 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           children: <Widget>[
             const Text('1. Select MIDI device'),
             DropdownButton<MidiDevice>(
-              value: _selectedMidiDevice,
+              value: selectedDevice,
               isExpanded: true,
               hint: const Text('No devices found'),
               onChanged: (MidiDevice? newValue) {
-                setState(() {
-                  _selectedMidiDevice = newValue;
-                });
+                ref.read(midiStateProvider.notifier).selectDevice(newValue);
               },
-              items: _midiDevices.map<DropdownMenuItem<MidiDevice>>((
+              items: midiState.devices?.map<DropdownMenuItem<MidiDevice>>((
                 MidiDevice device,
               ) {
                 return DropdownMenuItem<MidiDevice>(
@@ -250,10 +74,14 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            const Text('2. Connect to device'),
+            const Text('2. Connection Status'),
             ElevatedButton(
-              onPressed: _selectedMidiDevice != null ? _connect : null,
-              child: const Text('Connect'),
+              onPressed: midiState.isConnected
+                  ? () => ref.read(midiStateProvider.notifier).disconnect()
+                  : (selectedDevice != null
+                        ? () => ref.read(midiStateProvider.notifier).connect()
+                        : null),
+              child: Text(midiState.isConnected ? 'Disconnect' : 'Connect'),
             ),
             const Divider(height: 30),
             Expanded(

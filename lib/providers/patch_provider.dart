@@ -1,6 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'midi_service.dart';
-import 'reface_cs_patch.dart';
+import '../services/midi_service.dart';
+import '../reface_cs_patch.dart';
+
+/*PatchNotifier: patch data model manager
+manage the state of a Reface CS patch (or patch_es_ - upcoming)
+more about what the actual data means
+no info about how connection established / data that is being sent/received / which device is doing thta
+*/
 
 // Provider for the MidiService
 final midiServiceProvider = Provider<MidiService>((ref) {
