@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
 import 'package:midroidi/providers/patch_provider.dart';
-import 'package:midroidi/reface_cs_patch.dart';
+import 'package:midroidi/models/patch.dart';
 
 /* MidiStateNotifier: transport layer manager
 main responsibility is to manage the connection to synths

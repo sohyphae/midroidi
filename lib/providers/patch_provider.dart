@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../services/midi_service.dart';
-import '../reface_cs_patch.dart';
+import '../models/patch.dart';
 
 /*PatchNotifier: patch data model manager
 manage the state of a Reface CS patch (or patch_es_ - upcoming)
@@ -13,65 +14,206 @@ final midiServiceProvider = Provider<MidiService>((ref) {
   return MidiService();
 });
 
+const _uuid = Uuid();
+
+class PatchState {
+  PatchState({required this.savedPatches, required this.activePatch});
+
+  final List<Patch> savedPatches;
+  final Patch activePatch;
+
+  factory PatchState.initial() {
+    final initialPatch = Patch(
+      // id: _uuid.v4(),
+      id: 'test-id',
+      name: 'New Patch',
+      patchData: RefaceCsPatchData(),
+    );
+    return PatchState(savedPatches: [initialPatch], activePatch: initialPatch);
+  }
+
+  PatchState copyWith({List<Patch>? savedPatches, Patch? activePatch}) {
+    return PatchState(
+      savedPatches: savedPatches ?? this.savedPatches,
+      activePatch: activePatch ?? this.activePatch,
+    );
+  }
+}
+
 // StateNotifier for the RefaceCsPatch
-class PatchNotifier extends StateNotifier<RefaceCsPatch> {
-  PatchNotifier(this._midiService) : super(RefaceCsPatch());
+class PatchNotifier extends StateNotifier<PatchState> {
+  PatchNotifier(this._midiService) : super(PatchState.initial());
 
   final MidiService _midiService;
 
+  Patch getPatch(String patchId) {
+    return state.savedPatches.firstWhere((p) => p.id == patchId);
+  }
+
+  void loadPatch(String patchId) {
+    final patch = getPatch(patchId);
+    state = state.copyWith(activePatch: patch);
+    sendPatchToSynth(patch.patchData);
+  }
+
   // TODO: Reface CS can read but not transmit vol data, consider how to handle in UI?
-  void updateVolumeState(int newVolume) =>
-      state = state.copyWith(volume: newVolume);
+  void updateVolumeState(int newVolume) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      volume: newVolume,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateLfoAssignState(LfoType newLfoAssign) =>
-      state = state.copyWith(lfoType: newLfoAssign);
+  void updateLfoAssignState(LfoType newLfoAssign) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      lfoType: newLfoAssign,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateLfoDepthState(int newLfoDepth) =>
-      state = state.copyWith(lfoDepth: newLfoDepth);
+  void updateLfoDepthState(int newLfoDepth) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      lfoDepth: newLfoDepth,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateLfoSpeedState(int newLfoSpeed) =>
-      state = state.copyWith(lfoSpeed: newLfoSpeed);
+  void updateLfoSpeedState(int newLfoSpeed) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      lfoSpeed: newLfoSpeed,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updatePortamentoState(int newPortamento) =>
-      state = state.copyWith(portamento: newPortamento);
+  void updatePortamentoState(int newPortamento) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      portamento: newPortamento,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateOscTypeState(OscType newOscType) =>
-      state = state.copyWith(oscType: newOscType);
+  void updateOscTypeState(OscType newOscType) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      oscType: newOscType,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateOscTextureState(int newTexture) =>
-      state = state.copyWith(texture: newTexture);
+  void updateOscTextureState(int newTexture) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      texture: newTexture,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateOscModState(int newMod) => state = state.copyWith(mod: newMod);
+  void updateOscModState(int newMod) {
+    final newPatchData = state.activePatch.patchData.copyWith(mod: newMod);
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateCutoffState(int newCutoff) =>
-      state = state.copyWith(cutoff: newCutoff);
+  void updateCutoffState(int newCutoff) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      cutoff: newCutoff,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateResonanceState(int newResonance) =>
-      state = state.copyWith(resonance: newResonance);
+  void updateResonanceState(int newResonance) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      resonance: newResonance,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEgBalanceState(int newEgBalance) =>
-      state = state.copyWith(fegAegBalance: newEgBalance);
+  void updateEgBalanceState(int newEgBalance) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      fegAegBalance: newEgBalance,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEgAttackState(int newAttack) =>
-      state = state.copyWith(attack: newAttack);
+  void updateEgAttackState(int newAttack) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      attack: newAttack,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEgDecayState(int newDecay) =>
-      state = state.copyWith(decay: newDecay);
+  void updateEgDecayState(int newDecay) {
+    final newPatchData = state.activePatch.patchData.copyWith(decay: newDecay);
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEgSustainState(int newSustain) =>
-      state = state.copyWith(sustain: newSustain);
+  void updateEgSustainState(int newSustain) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      sustain: newSustain,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEgReleaseState(int newRelease) =>
-      state = state.copyWith(release: newRelease);
+  void updateEgReleaseState(int newRelease) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      release: newRelease,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEffectTypeState(EffectType newEffectType) =>
-      state = state.copyWith(effectType: newEffectType);
+  void updateEffectTypeState(EffectType newEffectType) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      effectType: newEffectType,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEffectDepthState(int newEffectDepth) =>
-      state = state.copyWith(effectDepth: newEffectDepth);
+  void updateEffectDepthState(int newEffectDepth) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      effectDepth: newEffectDepth,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
-  void updateEffectRateState(int newEffectRate) =>
-      state = state.copyWith(effectRate: newEffectRate);
+  void updateEffectRateState(int newEffectRate) {
+    final newPatchData = state.activePatch.patchData.copyWith(
+      effectRate: newEffectRate,
+    );
+    state = state.copyWith(
+      activePatch: state.activePatch.copyWith(patchData: newPatchData),
+    );
+  }
 
   // Base SysEx message for Reface CS parameter change
   // F0 43 10 7F 1C 03 hh mm ll dd F7
@@ -187,13 +329,30 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
     _sendSysEx(0x12, newEffectRate);
   }
 
-  // // Later : send all parameters
-  // void loadPatch(RefaceCsPatch patch) {
-  //   state = patch;
-  // }
+  void sendPatchToSynth(RefaceCsPatchData patch) {
+    updateVolume(patch.volume);
+    updateLfoAssign(patch.lfoType);
+    updateLfoDepth(patch.lfoDepth);
+    updateLfoSpeed(patch.lfoSpeed);
+    updatePortamento(patch.portamento);
+    updateOscType(patch.oscType);
+    updateOscTexture(patch.texture);
+    updateOscMod(patch.mod);
+    updateCutoff(patch.cutoff);
+    updateResonance(patch.resonance);
+    updateEgBalance(patch.fegAegBalance);
+    updateEgAttack(patch.attack);
+    updateEgDecay(patch.decay);
+    updateEgSustain(patch.sustain);
+    updateEgRelease(patch.release);
+    updateEffectType(patch.effectType);
+    updateEffectDepth(patch.effectDepth);
+    updateEffectRate(patch.effectRate);
+  }
 
+  // todo needs some more thought for add new as button press is sync but this result will be received async
   void updateFromBulkDump(List<int> data) {
-    state = state.copyWith(
+    final newPatchData = state.activePatch.patchData.copyWith(
       // note in manual: "[vol] can be set only via MIDI" :| handle with cc later
       volume: data[0], // not working
       lfoType: LfoType.values[data[2]],
@@ -215,33 +374,35 @@ class PatchNotifier extends StateNotifier<RefaceCsPatch> {
       effectRate: data[18],
     );
 
+    final newActivePatch = state.activePatch.copyWith(patchData: newPatchData);
+
+    state = state.copyWith(activePatch: newActivePatch);
+
     print('''
-        Patch: 
-          Volume: ${state.volume},
-          LFO Type: ${state.lfoType},
-          LFO Depth: ${state.lfoDepth},
-          LFO Speed: ${state.lfoSpeed},
-          Portamento: ${state.portamento},
-          OSC Type: ${state.oscType},
-          Texture: ${state.texture},
-          Mod: ${state.mod},
-          Cutoff: ${state.cutoff},
-          Resonance: ${state.resonance},
-          EG Balance: ${state.fegAegBalance},
-          Attack: ${state.attack},
-          Decay: ${state.decay},
-          Sustain: ${state.sustain},
-          Release: ${state.release},
-          Effect Type: ${state.effectType},
-          Effect Depth: ${state.effectDepth},
-          Effect Rate: ${state.effectRate},
+        Active patch: 
+          Volume: ${state.activePatch.patchData.volume},
+          LFO Type: ${state.activePatch.patchData.lfoType},
+          LFO Depth: ${state.activePatch.patchData.lfoDepth},
+          LFO Speed: ${state.activePatch.patchData.lfoSpeed},
+          Portamento: ${state.activePatch.patchData.portamento},
+          OSC Type: ${state.activePatch.patchData.oscType},
+          Texture: ${state.activePatch.patchData.texture},
+          Mod: ${state.activePatch.patchData.mod},
+          Cutoff: ${state.activePatch.patchData.cutoff},
+          Resonance: ${state.activePatch.patchData.resonance},
+          EG Balance: ${state.activePatch.patchData.fegAegBalance},
+          Attack: ${state.activePatch.patchData.attack},
+          Decay: ${state.activePatch.patchData.decay},
+          Sustain: ${state.activePatch.patchData.sustain},
+          Release: ${state.activePatch.patchData.release},
+          Effect Type: ${state.activePatch.patchData.effectType},
+          Effect Depth: ${state.activePatch.patchData.effectDepth},
+          Effect Rate: ${state.activePatch.patchData.effectRate},
         ''');
   }
 }
 
-final patchProvider = StateNotifierProvider<PatchNotifier, RefaceCsPatch>((
-  ref,
-) {
+final patchProvider = StateNotifierProvider<PatchNotifier, PatchState>((ref) {
   // Watch the midiServiceProvider to get the MidiService instance
   // and provide it to the PatchNotifier
   final midiService = ref.watch(midiServiceProvider);

@@ -4,13 +4,13 @@ enum OscType { multiSaw, pulse, oscSync, ringMod, freqMod }
 
 enum EffectType { distortion, chorusFlanger, phaser, delay, off }
 
-class RefaceCsPatch {
-  RefaceCsPatch({
+class RefaceCsPatchData {
+  RefaceCsPatchData({
     this.lfoType = LfoType.off,
     this.lfoDepth = 0,
     this.lfoSpeed = 0,
     this.portamento = 0,
-    this.volume = 100,
+    this.volume = 60,
     this.oscType = OscType.multiSaw,
     this.texture = 0,
     this.mod = 0,
@@ -56,7 +56,7 @@ class RefaceCsPatch {
   final int effectDepth; // 0-127
   final int effectRate; // 0-127
 
-  RefaceCsPatch copyWith({
+  RefaceCsPatchData copyWith({
     LfoType? lfoType,
     int? lfoDepth,
     int? lfoSpeed,
@@ -76,7 +76,7 @@ class RefaceCsPatch {
     int? effectDepth,
     int? effectRate,
   }) {
-    return RefaceCsPatch(
+    return RefaceCsPatchData(
       lfoType: lfoType ?? this.lfoType,
       lfoDepth: lfoDepth ?? this.lfoDepth,
       lfoSpeed: lfoSpeed ?? this.lfoSpeed,
@@ -95,6 +95,22 @@ class RefaceCsPatch {
       effectType: effectType ?? this.effectType,
       effectDepth: effectDepth ?? this.effectDepth,
       effectRate: effectRate ?? this.effectRate,
+    );
+  }
+}
+
+class Patch {
+  Patch({required this.id, required this.name, required this.patchData});
+
+  final String id;
+  final String name;
+  final RefaceCsPatchData patchData;
+
+  Patch copyWith({String? id, String? name, RefaceCsPatchData? patchData}) {
+    return Patch(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      patchData: patchData ?? this.patchData,
     );
   }
 }
