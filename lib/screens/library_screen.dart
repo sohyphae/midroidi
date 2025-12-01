@@ -103,16 +103,40 @@ class LibraryScreen extends ConsumerWidget {
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
-                            onPressed: () => {
-                              ref
-                                  .read(patchProvider.notifier)
-                                  .deletePatch(patch.id),
-                            },
                             tooltip: 'delete patch',
+                            onPressed: () => {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Delete patch forever?'),
+                                    content: Text(
+                                      "You cannot undo this operation",
+                                    ),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        child: const Text('Cancel'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                      TextButton(
+                                        child: const Text('Delete patch'),
+                                        onPressed: () {
+                                          ref
+                                              .read(patchProvider.notifier)
+                                              .deletePatch(patch.id);
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            },
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
                     ],
                   );
                 },

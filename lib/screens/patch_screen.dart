@@ -14,19 +14,19 @@ class PatchScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final patchState = ref.watch(patchProvider);
+    final patchName = ref.watch(patchProvider).activePatch.name;
     final patchData = ref.watch(patchProvider).activePatch.patchData;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(patchState.activePatch.name),
+        title: Text(patchName),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () {
               final TextEditingController nameController =
-                  TextEditingController(text: patchState.activePatch.name);
+                  TextEditingController(text: patchName);
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
@@ -34,8 +34,9 @@ class PatchScreen extends ConsumerWidget {
                     title: const Text('Save Patch'),
                     content: TextField(
                       controller: nameController,
-                      decoration:
-                          const InputDecoration(hintText: "Enter patch name"),
+                      decoration: const InputDecoration(
+                        hintText: "Enter patch name",
+                      ),
                     ),
                     actions: <Widget>[
                       TextButton(

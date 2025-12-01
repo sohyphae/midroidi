@@ -79,7 +79,10 @@ class PatchNotifier extends StateNotifier<PatchState> {
       newSavedPatches.add(patchToSave);
     }
 
-    state = state.copyWith(savedPatches: newSavedPatches);
+    state = state.copyWith(
+      activePatch: patchToSave, // for activePatch consumers
+      savedPatches: newSavedPatches,
+    );
   }
 
   void deletePatch(String? id) {
