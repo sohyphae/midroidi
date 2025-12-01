@@ -90,10 +90,10 @@ class MidiStateNotifier extends StateNotifier<MidiState> {
           _onMidiData(packet.data);
         });
     state = state.copyWith(isConnected: true);
-    // Delay to allow the connection to establish before sending msg
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _ref.read(midiServiceProvider).requestPatchDump();
-    });
+    // // Delay to allow the connection to establish before sending msg // doing this on new patch now
+    // Future.delayed(const Duration(milliseconds: 500), () {
+    //   _ref.read(midiServiceProvider).requestPatchDump();
+    // });
   }
 
   void disconnect() {

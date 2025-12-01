@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midroidi/screens/patch_screen.dart';
+import 'package:uuid/uuid.dart';
 import '../providers/midi_provider.dart';
 import '../providers/patch_provider.dart';
+
+const _uuid = Uuid();
 
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
@@ -37,7 +40,7 @@ class LibraryScreen extends ConsumerWidget {
             DropdownButton<MidiDevice>(
               value: selectedDevice,
               isExpanded: true,
-              hint: const Text('No devices found'),
+              hint: const Text('Show devices'),
               onChanged: (MidiDevice? newValue) {
                 ref.read(midiStateProvider.notifier).selectDevice(newValue);
               },
@@ -61,24 +64,59 @@ class LibraryScreen extends ConsumerWidget {
               child: Text(midiState.isConnected ? 'Disconnect' : 'Connect'),
             ),
             const Divider(height: 30),
-            // ElevatedButton(
-            //   onPressed: () async {
-            //     await ref.read(patchProvider.notifier).newPatch();
-            //     Navigator.of(
-            //       context,
-            //     ).push(MaterialPageRoute(builder: (context) => PatchScreen()));
-            //   },
-            //   child: Text('New patch'),
-            // ),
             ElevatedButton(
-              onPressed: () {
-                print(patchState.savedPatches);
-                ref.read(patchProvider.notifier).loadPatch('test-id');
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (context) => PatchScreen()));
+              child: Text('New patch'),
+              onPressed: () async {
+                final newPatchId = _uuid.v4();
+                await ref.read(patchProvider.notifier).newPatch(newPatchId);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PatchScreen(id: newPatchId),
+                  ),
+                );
               },
-              child: Text('Load test patch'),
+            ),
+            const Divider(height: 30),
+            const Text('Saved patches'),
+            Expanded(
+              child: ListView.builder(
+                itemCount: patchState.savedPatches.length,
+                itemBuilder: (context, index) {
+                  final patch = patchState.savedPatches[index];
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            child: Text(patch.name),
+                            onPressed: () {
+                              ref
+                                  .read(patchProvider.notifier)
+                                  .loadPatch(patch.id);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PatchScreen(id: patch.id),
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => {
+                              ref
+                                  .read(patchProvider.notifier)
+                                  .deletePatch(patch.id),
+                            },
+                            tooltip: 'delete patch',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),

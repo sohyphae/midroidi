@@ -24,9 +24,8 @@ class PatchState {
 
   factory PatchState.initial() {
     final initialPatch = Patch(
-      // id: _uuid.v4(),
-      id: 'test-id',
-      name: 'New Patch',
+      id: _uuid.v4(),
+      name: 'Existing Patch',
       patchData: RefaceCsPatchData(),
     );
     return PatchState(savedPatches: [initialPatch], activePatch: initialPatch);
@@ -54,6 +53,41 @@ class PatchNotifier extends StateNotifier<PatchState> {
     final patch = getPatch(patchId);
     state = state.copyWith(activePatch: patch);
     sendPatchToSynth(patch.patchData);
+  }
+
+  Future<void> newPatch(String newId) async {
+    final newPatch = Patch(
+      id: newId,
+      name: 'New Patch',
+      patchData:
+          RefaceCsPatchData(), // will be overwritten shortly by bulk dump
+    );
+    state = state.copyWith(activePatch: newPatch);
+    _midiService.requestPatchDump();
+  }
+
+  void savePatch(String? id, String name) {
+    final patchToSave = state.activePatch.copyWith(id: id, name: name);
+    final newSavedPatches = List<Patch>.from(state.savedPatches);
+
+    if (newSavedPatches.any((p) => p.id == id)) {
+      newSavedPatches[newSavedPatches.indexWhere(
+            (p) => p.id == patchToSave.id,
+          )] =
+          patchToSave;
+    } else {
+      newSavedPatches.add(patchToSave);
+    }
+
+    state = state.copyWith(savedPatches: newSavedPatches);
+  }
+
+  void deletePatch(String? id) {
+    final newSavedPatches = List<Patch>.from(state.savedPatches);
+
+    newSavedPatches.removeWhere((p) => p.id == id);
+
+    state = state.copyWith(savedPatches: newSavedPatches);
   }
 
   // TODO: Reface CS can read but not transmit vol data, consider how to handle in UI?
@@ -350,7 +384,6 @@ class PatchNotifier extends StateNotifier<PatchState> {
     updateEffectRate(patch.effectRate);
   }
 
-  // todo needs some more thought for add new as button press is sync but this result will be received async
   void updateFromBulkDump(List<int> data) {
     final newPatchData = state.activePatch.patchData.copyWith(
       // note in manual: "[vol] can be set only via MIDI" :| handle with cc later

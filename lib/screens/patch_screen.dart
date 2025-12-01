@@ -8,21 +8,56 @@ import '../providers/patch_provider.dart';
 import '../models/patch.dart';
 
 class PatchScreen extends ConsumerWidget {
-  const PatchScreen({super.key});
+  const PatchScreen({this.id, super.key});
+
+  final String? id;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final patchState = ref.watch(patchProvider);
     final patchData = ref.watch(patchProvider).activePatch.patchData;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Patch {name}'),
+        title: Text(patchState.activePatch.name),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            //todo
-            onPressed: () => {},
+            onPressed: () {
+              final TextEditingController nameController =
+                  TextEditingController(text: patchState.activePatch.name);
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Save Patch'),
+                    content: TextField(
+                      controller: nameController,
+                      decoration:
+                          const InputDecoration(hintText: "Enter patch name"),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('Cancel'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      TextButton(
+                        child: const Text('Save'),
+                        onPressed: () {
+                          ref
+                              .read(patchProvider.notifier)
+                              .savePatch(id, nameController.text);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
             tooltip: 'save or something',
           ),
         ],
