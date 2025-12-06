@@ -74,7 +74,7 @@ class PatchScreen extends ConsumerWidget {
                   ref.read(patchProvider.notifier).updateVolume(value.toInt()),
             ),
             const Divider(),
-            const SectionHeader('LFO'),
+            // const SectionHeader('LFO'),
             ParameterDropdown<LfoType>(
               value: patchData.lfoType,
               items: LfoType.values,
@@ -99,7 +99,7 @@ class PatchScreen extends ConsumerWidget {
                   .updateLfoSpeed(value.toInt()),
             ),
             const Divider(),
-            const SectionHeader('Portamento'),
+            // const SectionHeader('Portamento'),
             // Synth controls are more quantized here, may want to fix later
             ParameterSlider(
               title: 'Portamento',
@@ -109,7 +109,7 @@ class PatchScreen extends ConsumerWidget {
                   .updatePortamento(value.toInt()),
             ),
             const Divider(),
-            const SectionHeader('Oscillator'),
+            // const SectionHeader('Oscillator'),
             ParameterDropdown<OscType>(
               value: patchData.oscType,
               items: OscType.values.reversed.toList(),
@@ -133,7 +133,7 @@ class PatchScreen extends ConsumerWidget {
                   ref.read(patchProvider.notifier).updateOscMod(value.toInt()),
             ),
             const Divider(),
-            const SectionHeader('Filter'),
+            // const SectionHeader('Filter'),
             ParameterSlider(
               title: 'Cutoff',
               value: patchData.cutoff,
@@ -148,7 +148,7 @@ class PatchScreen extends ConsumerWidget {
                   .updateResonance(value.toInt()),
             ),
             const Divider(),
-            const SectionHeader('Envelope Generator'),
+            // const SectionHeader('Envelope Generator'),
             ParameterSlider(
               title: 'EG Balance',
               value: patchData.fegAegBalance,
@@ -184,7 +184,7 @@ class PatchScreen extends ConsumerWidget {
                   .updateEgRelease(value.toInt()),
             ),
             const Divider(),
-            const SectionHeader('Effect'),
+            // const SectionHeader('Effect'),
             ParameterDropdown<EffectType>(
               value: patchData.effectType,
               items: EffectType.values,

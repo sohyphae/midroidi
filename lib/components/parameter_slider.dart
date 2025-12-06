@@ -18,17 +18,22 @@ class ParameterSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('$title: $value'),
-        Slider(
-          value: value.toDouble(),
-          min: min,
-          max: max,
-          divisions: (max - min).toInt(),
-          label: value.toString(),
-          onChanged: onChanged,
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: SizedBox(width: 120.0, child: Text('$title: $value')),
+        ),
+        Expanded(
+          child: Slider(
+            value: value.toDouble(),
+            min: min,
+            max: max,
+            divisions: (max - min).toInt(),
+            label: value.toString(),
+            onChanged: onChanged,
+          ),
         ),
       ],
     );

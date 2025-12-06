@@ -38,53 +38,55 @@ class LibraryScreen extends ConsumerWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const Text('1. Select MIDI device'),
-            DropdownButton<MidiDevice>(
-              value: selectedDevice,
-              isExpanded: true,
-              hint: const Text('Show devices'),
-              onChanged: (MidiDevice? newValue) {
-                ref.read(midiStateProvider.notifier).selectDevice(newValue);
-              },
-              items: midiState.devices?.map<DropdownMenuItem<MidiDevice>>((
-                MidiDevice device,
-              ) {
-                return DropdownMenuItem<MidiDevice>(
-                  value: device,
-                  child: Text(device.name),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-            const Text('2. Connection Status'),
-            ElevatedButton(
-              onPressed: midiState.isConnected
-                  ? () => ref.read(midiStateProvider.notifier).disconnect()
-                  : (selectedDevice != null
-                        ? () => ref.read(midiStateProvider.notifier).connect()
-                        : null),
-              child: Text(midiState.isConnected ? 'Disconnect' : 'Connect'),
-            ),
-            const Divider(height: 30),
-            ElevatedButton(
-              child: Text('New patch'),
-              onPressed: () async {
-                final newPatchId = _uuid.v4();
-                await ref.read(patchProvider.notifier).newPatch(newPatchId);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PatchScreen(id: newPatchId),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 30),
-            const Text('Saved patches'),
-            Expanded(
-              child: ListView.builder(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const Text('1. Select MIDI device'),
+              DropdownButton<MidiDevice>(
+                value: selectedDevice,
+                isExpanded: true,
+                hint: const Text('Show devices'),
+                onChanged: (MidiDevice? newValue) {
+                  ref.read(midiStateProvider.notifier).selectDevice(newValue);
+                },
+                items: midiState.devices?.map<DropdownMenuItem<MidiDevice>>((
+                  MidiDevice device,
+                ) {
+                  return DropdownMenuItem<MidiDevice>(
+                    value: device,
+                    child: Text(device.name),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              const Text('2. Connection Status'),
+              ElevatedButton(
+                onPressed: midiState.isConnected
+                    ? () => ref.read(midiStateProvider.notifier).disconnect()
+                    : (selectedDevice != null
+                          ? () => ref.read(midiStateProvider.notifier).connect()
+                          : null),
+                child: Text(midiState.isConnected ? 'Disconnect' : 'Connect'),
+              ),
+              const Divider(height: 30),
+              ElevatedButton(
+                child: const Text('New patch'),
+                onPressed: () async {
+                  final newPatchId = _uuid.v4();
+                  await ref.read(patchProvider.notifier).newPatch(newPatchId);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PatchScreen(id: newPatchId),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 30),
+              const Text('Saved patches'),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: sortedPatches.length,
                 itemBuilder: (context, index) {
                   final patch = sortedPatches[index];
@@ -124,7 +126,7 @@ class LibraryScreen extends ConsumerWidget {
                                 builder: (BuildContext context) {
                                   return AlertDialog(
                                     title: const Text('Delete patch forever?'),
-                                    content: Text(
+                                    content: const Text(
                                       "You cannot undo this operation",
                                     ),
                                     actions: <Widget>[
@@ -155,22 +157,22 @@ class LibraryScreen extends ConsumerWidget {
                   );
                 },
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              child: const Text('Copy patches to clipboard'),
-              onPressed: () {
-                final jsonString = jsonEncode(patchState.savedPatches);
-                Clipboard.setData(ClipboardData(text: jsonString));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('All patches copied to clipboard!'),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                child: const Text('Copy patches to clipboard'),
+                onPressed: () {
+                  final jsonString = jsonEncode(patchState.savedPatches);
+                  Clipboard.setData(ClipboardData(text: jsonString));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('All patches copied to clipboard!'),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

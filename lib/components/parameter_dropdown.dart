@@ -14,20 +14,23 @@ class ParameterDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButton<T>(
-          value: value,
-          onChanged: onChanged,
-          items: items.map((T item) {
-            return DropdownMenuItem<T>(
-              value: item,
-              child: Text(item.toString().split('.').last),
-            );
-          }).toList(),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(left: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButton<T>(
+            value: value,
+            onChanged: onChanged,
+            items: items.map((T item) {
+              return DropdownMenuItem<T>(
+                value: item,
+                child: Text(item.toString().split('.').last),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }
