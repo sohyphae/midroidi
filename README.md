@@ -7,6 +7,10 @@ Prerequisites
 - Tun on midi control on the synth (enables the synth to receive midi parameter data from the app)
 - Ensure synth is listening on channel 1 (Ability to select midi channel to be added in future)
 
+## Build generated
+
+`flutter pub run build_runner build`
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

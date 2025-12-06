@@ -126,7 +126,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
       newSavedPatches.removeWhere((p) => p.id == id);
 
       state = state.copyWith(savedPatches: newSavedPatches);
-      await _storageService.deletePatch(patchToDelete.name);
+      await _storageService.deletePatch(patchToDelete.id);
     }
   }
 

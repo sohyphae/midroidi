@@ -10,14 +10,13 @@ class StorageService {
     return directory.path;
   }
 
-  // nicer browse in file system but id is safer as name currently non unique
-  Future<File> _localFile(String fileName) async {
+  Future<File> _localFile(String patchId) async {
     final path = await _localPath;
-    return File('$path/$fileName.json');
+    return File('$path/$patchId.json');
   }
 
   Future<void> savePatch(Patch patch) async {
-    final file = await _localFile(patch.name);
+    final file = await _localFile(patch.id);
     final jsonString = jsonEncode(patch.toJson());
     await file.writeAsString(jsonString);
   }
@@ -44,9 +43,9 @@ class StorageService {
     }
   }
 
-  Future<void> deletePatch(String patchName) async {
+  Future<void> deletePatch(String patchId) async {
     try {
-      final file = await _localFile(patchName);
+      final file = await _localFile(patchId);
       if (await file.exists()) {
         await file.delete();
       }
