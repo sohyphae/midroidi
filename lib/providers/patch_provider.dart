@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../services/midi_service.dart';
+import '../services/storage_service.dart';
 import '../models/patch.dart';
 
 /*PatchNotifier: patch data model manager
@@ -17,33 +18,64 @@ final midiServiceProvider = Provider<MidiService>((ref) {
 const _uuid = Uuid();
 
 class PatchState {
-  PatchState({required this.savedPatches, required this.activePatch});
+  PatchState({
+    required this.savedPatches,
+    required this.activePatch,
+    this.isLoading = true,
+  });
 
   final List<Patch> savedPatches;
   final Patch activePatch;
+  final bool isLoading;
 
   factory PatchState.initial() {
     final initialPatch = Patch(
       id: _uuid.v4(),
-      name: 'Existing Patch',
+      name: 'Default Patch',
       patchData: RefaceCsPatchData(),
     );
-    return PatchState(savedPatches: [initialPatch], activePatch: initialPatch);
+    return PatchState(
+      savedPatches: [],
+      activePatch: initialPatch,
+      isLoading: true,
+    );
   }
 
-  PatchState copyWith({List<Patch>? savedPatches, Patch? activePatch}) {
+  PatchState copyWith({
+    List<Patch>? savedPatches,
+    Patch? activePatch,
+    bool? isLoading,
+  }) {
     return PatchState(
       savedPatches: savedPatches ?? this.savedPatches,
       activePatch: activePatch ?? this.activePatch,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }
 
 // StateNotifier for the RefaceCsPatch
 class PatchNotifier extends StateNotifier<PatchState> {
-  PatchNotifier(this._midiService) : super(PatchState.initial());
+  PatchNotifier(this._midiService, this._storageService)
+    : super(PatchState.initial()) {
+    _loadPatches();
+  }
 
   final MidiService _midiService;
+  final StorageService _storageService;
+
+  Future<void> _loadPatches() async {
+    final patches = await _storageService.loadPatches();
+    if (patches.isNotEmpty) {
+      state = state.copyWith(
+        savedPatches: patches,
+        activePatch: patches.first,
+        isLoading: false,
+      );
+    } else {
+      state = state.copyWith(isLoading: false);
+    }
+  }
 
   Patch getPatch(String patchId) {
     return state.savedPatches.firstWhere((p) => p.id == patchId);
@@ -66,7 +98,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
     _midiService.requestPatchDump();
   }
 
-  void savePatch(String? id, String name) {
+  Future<void> savePatch(String? id, String name) async {
     final patchToSave = state.activePatch.copyWith(id: id, name: name);
     final newSavedPatches = List<Patch>.from(state.savedPatches);
 
@@ -80,17 +112,22 @@ class PatchNotifier extends StateNotifier<PatchState> {
     }
 
     state = state.copyWith(
-      activePatch: patchToSave, // for activePatch consumers
+      activePatch: patchToSave,
       savedPatches: newSavedPatches,
     );
+    await _storageService.savePatch(patchToSave);
   }
 
-  void deletePatch(String? id) {
-    final newSavedPatches = List<Patch>.from(state.savedPatches);
+  Future<void> deletePatch(String? id) async {
+    if (id != null) {
+      final patchToDelete = state.savedPatches.firstWhere((p) => p.id == id);
+      final newSavedPatches = List<Patch>.from(state.savedPatches);
 
-    newSavedPatches.removeWhere((p) => p.id == id);
+      newSavedPatches.removeWhere((p) => p.id == id);
 
-    state = state.copyWith(savedPatches: newSavedPatches);
+      state = state.copyWith(savedPatches: newSavedPatches);
+      await _storageService.deletePatch(patchToDelete.name);
+    }
   }
 
   // TODO: Reface CS can read but not transmit vol data, consider how to handle in UI?
@@ -439,8 +476,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
 }
 
 final patchProvider = StateNotifierProvider<PatchNotifier, PatchState>((ref) {
-  // Watch the midiServiceProvider to get the MidiService instance
-  // and provide it to the PatchNotifier
   final midiService = ref.watch(midiServiceProvider);
-  return PatchNotifier(midiService);
+  final storageService = StorageService();
+  return PatchNotifier(midiService, storageService);
 });

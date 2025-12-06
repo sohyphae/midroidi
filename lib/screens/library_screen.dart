@@ -18,6 +18,9 @@ class LibraryScreen extends ConsumerWidget {
 
     final MidiDevice? selectedDevice = midiState.selectedDevice;
 
+    final sortedPatches = List.from(patchState.savedPatches)
+      ..sort((a, b) => a.name.compareTo(b.name));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Midroidi Editor'),
@@ -80,9 +83,9 @@ class LibraryScreen extends ConsumerWidget {
             const Text('Saved patches'),
             Expanded(
               child: ListView.builder(
-                itemCount: patchState.savedPatches.length,
+                itemCount: sortedPatches.length,
                 itemBuilder: (context, index) {
-                  final patch = patchState.savedPatches[index];
+                  final patch = sortedPatches[index];
                   return Column(
                     children: [
                       Row(

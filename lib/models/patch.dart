@@ -1,9 +1,14 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'patch.g.dart';
+
 enum LfoType { off, amp, filter, pitch, osc }
 
 enum OscType { multiSaw, pulse, oscSync, ringMod, freqMod }
 
 enum EffectType { distortion, chorusFlanger, phaser, delay, off }
 
+@JsonSerializable()
 class RefaceCsPatchData {
   RefaceCsPatchData({
     this.lfoType = LfoType.off,
@@ -94,11 +99,15 @@ class RefaceCsPatchData {
       release: release ?? this.release,
       effectType: effectType ?? this.effectType,
       effectDepth: effectDepth ?? this.effectDepth,
-      effectRate: effectRate ?? this.effectRate,
     );
   }
+
+  factory RefaceCsPatchData.fromJson(Map<String, dynamic> json) =>
+      _$RefaceCsPatchDataFromJson(json);
+  Map<String, dynamic> toJson() => _$RefaceCsPatchDataToJson(this);
 }
 
+@JsonSerializable()
 class Patch {
   Patch({required this.id, required this.name, required this.patchData});
 
@@ -113,4 +122,7 @@ class Patch {
       patchData: patchData ?? this.patchData,
     );
   }
+
+  factory Patch.fromJson(Map<String, dynamic> json) => _$PatchFromJson(json);
+  Map<String, dynamic> toJson() => _$PatchToJson(this);
 }
