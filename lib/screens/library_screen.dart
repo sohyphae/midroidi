@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midroidi/screens/patch_screen.dart';
@@ -89,20 +91,29 @@ class LibraryScreen extends ConsumerWidget {
                   return Column(
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          ElevatedButton(
-                            child: Text(patch.name),
-                            onPressed: () {
-                              ref
-                                  .read(patchProvider.notifier)
-                                  .loadPatch(patch.id);
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      PatchScreen(id: patch.id),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 15),
+                            child: ElevatedButton(
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.all(
+                                  Colors.yellowAccent,
                                 ),
-                              );
-                            },
+                              ),
+                              onPressed: () {
+                                ref
+                                    .read(patchProvider.notifier)
+                                    .loadPatch(patch.id);
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        PatchScreen(id: patch.id),
+                                  ),
+                                );
+                              },
+                              child: Text(patch.name),
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
@@ -145,6 +156,20 @@ class LibraryScreen extends ConsumerWidget {
                 },
               ),
             ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              child: const Text('Copy patches to clipboard'),
+              onPressed: () {
+                final jsonString = jsonEncode(patchState.savedPatches);
+                Clipboard.setData(ClipboardData(text: jsonString));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All patches copied to clipboard!'),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
