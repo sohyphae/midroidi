@@ -1,6 +1,10 @@
 # midroidi
 
-A synth parameter controller for Android
+A synthesizer parameter controller for Android
+
+### Supported synths
+- Yamaha Reface CS
+- More soon...
 
 Prerequisites
 
