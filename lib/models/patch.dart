@@ -99,6 +99,7 @@ class RefaceCsPatchData {
       release: release ?? this.release,
       effectType: effectType ?? this.effectType,
       effectDepth: effectDepth ?? this.effectDepth,
+      effectRate: effectRate ?? this.effectRate,
     );
   }
 

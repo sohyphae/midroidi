@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../components/parameter_dropdown.dart';
 import '../components/parameter_slider.dart';
-import '../components/section_header.dart';
-import '../providers/patch_provider.dart';
 import '../models/patch.dart';
+import '../providers/patch_provider.dart';
 
 class PatchScreen extends ConsumerWidget {
   const PatchScreen({this.id, super.key});
@@ -14,8 +13,9 @@ class PatchScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final patchName = ref.watch(patchProvider).activePatch.name;
-    final patchData = ref.watch(patchProvider).activePatch.patchData;
+    final patchName = ref.watch(
+      patchProvider.select((state) => state.activePatch.name),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -69,146 +69,103 @@ class PatchScreen extends ConsumerWidget {
           children: [
             ParameterSlider(
               title: 'Volume',
-              value: patchData.volume,
-              onChanged: (value) =>
-                  ref.read(patchProvider.notifier).updateVolume(value.toInt()),
+              select: (data) => data.volume,
+              onChanged: (notifier, value) => notifier.updateVolume(value),
             ),
             const Divider(),
-            // const SectionHeader('LFO'),
             ParameterDropdown<LfoType>(
-              value: patchData.lfoType,
+              select: (data) => data.lfoType,
               items: LfoType.values,
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(patchProvider.notifier).updateLfoAssign(value);
-                }
-              },
+              onChanged: (notifier, value) => notifier.updateLfoAssign(value),
             ),
             ParameterSlider(
               title: 'LFO Depth',
-              value: patchData.lfoDepth,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateLfoDepth(value.toInt()),
+              select: (data) => data.lfoDepth,
+              onChanged: (notifier, value) => notifier.updateLfoDepth(value),
             ),
             ParameterSlider(
               title: 'LFO Speed',
-              value: patchData.lfoSpeed,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateLfoSpeed(value.toInt()),
+              select: (data) => data.lfoSpeed,
+              onChanged: (notifier, value) => notifier.updateLfoSpeed(value),
             ),
             const Divider(),
             // const SectionHeader('Portamento'),
             // Synth controls are more quantized here, may want to fix later
             ParameterSlider(
               title: 'Portamento',
-              value: patchData.portamento,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updatePortamento(value.toInt()),
+              select: (data) => data.portamento,
+              onChanged: (notifier, value) => notifier.updatePortamento(value),
             ),
             const Divider(),
-            // const SectionHeader('Oscillator'),
             ParameterDropdown<OscType>(
-              value: patchData.oscType,
+              select: (data) => data.oscType,
               items: OscType.values.reversed.toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(patchProvider.notifier).updateOscType(value);
-                }
-              },
+              onChanged: (notifier, value) => notifier.updateOscType(value),
             ),
             ParameterSlider(
               title: 'OSC Texture',
-              value: patchData.texture,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateOscTexture(value.toInt()),
+              select: (data) => data.texture,
+              onChanged: (notifier, value) => notifier.updateOscTexture(value),
             ),
             ParameterSlider(
               title: 'OSC Mod',
-              value: patchData.mod,
-              onChanged: (value) =>
-                  ref.read(patchProvider.notifier).updateOscMod(value.toInt()),
+              select: (data) => data.mod,
+              onChanged: (notifier, value) => notifier.updateOscMod(value),
             ),
             const Divider(),
-            // const SectionHeader('Filter'),
             ParameterSlider(
               title: 'Cutoff',
-              value: patchData.cutoff,
-              onChanged: (value) =>
-                  ref.read(patchProvider.notifier).updateCutoff(value.toInt()),
+              select: (data) => data.cutoff,
+              onChanged: (notifier, value) => notifier.updateCutoff(value),
             ),
             ParameterSlider(
               title: 'Resonance',
-              value: patchData.resonance,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateResonance(value.toInt()),
+              select: (data) => data.resonance,
+              onChanged: (notifier, value) => notifier.updateResonance(value),
             ),
             const Divider(),
-            // const SectionHeader('Envelope Generator'),
             ParameterSlider(
               title: 'EG Balance',
-              value: patchData.fegAegBalance,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateEgBalance(value.toInt()),
+              select: (data) => data.fegAegBalance,
+              onChanged: (notifier, value) => notifier.updateEgBalance(value),
             ),
             ParameterSlider(
               title: 'Attack',
-              value: patchData.attack,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateEgAttack(value.toInt()),
+              select: (data) => data.attack,
+              onChanged: (notifier, value) => notifier.updateEgAttack(value),
             ),
             ParameterSlider(
               title: 'Decay',
-              value: patchData.decay,
-              onChanged: (value) =>
-                  ref.read(patchProvider.notifier).updateEgDecay(value.toInt()),
+              select: (data) => data.decay,
+              onChanged: (notifier, value) => notifier.updateEgDecay(value),
             ),
             ParameterSlider(
               title: 'Sustain',
-              value: patchData.sustain,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateEgSustain(value.toInt()),
+              select: (data) => data.sustain,
+              onChanged: (notifier, value) => notifier.updateEgSustain(value),
             ),
             ParameterSlider(
               title: 'Release',
-              value: patchData.release,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateEgRelease(value.toInt()),
+              select: (data) => data.release,
+              onChanged: (notifier, value) => notifier.updateEgRelease(value),
             ),
             const Divider(),
-            // const SectionHeader('Effect'),
             ParameterDropdown<EffectType>(
-              value: patchData.effectType,
+              select: (data) => data.effectType,
               items: EffectType.values,
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(patchProvider.notifier).updateEffectType(value);
-                }
-              },
+              onChanged: (notifier, value) => notifier.updateEffectType(value),
             ),
             ParameterSlider(
               title: 'Effect Depth',
-              value: patchData.effectDepth,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateEffectDepth(value.toInt()),
+              select: (data) => data.effectDepth,
+              onChanged: (notifier, value) => notifier.updateEffectDepth(value),
             ),
             ParameterSlider(
               title: 'Effect Rate',
-              value: patchData.effectRate,
-              onChanged: (value) => ref
-                  .read(patchProvider.notifier)
-                  .updateEffectRate(value.toInt()),
+              select: (data) => data.effectRate,
+              onChanged: (notifier, value) => notifier.updateEffectRate(value),
             ),
-            SizedBox(height: 50),
+            const SizedBox(height: 50),
           ],
         ),
       ),
