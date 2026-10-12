@@ -6,23 +6,19 @@ import '../providers/patch_provider.dart';
 class ParameterSlider extends ConsumerWidget {
   const ParameterSlider({
     super.key,
-    required this.title,
-    required this.select,
-    required this.onChanged,
+    required this.param,
     this.min = 0,
     this.max = 127,
   });
 
-  final String title;
-  final int Function(RefaceCsPatchData patchData) select;
-  final void Function(PatchNotifier notifier, int value) onChanged;
+  final RefaceCsParam param;
   final double min;
   final double max;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(
-      patchProvider.select((state) => select(state.activePatch.patchData)),
+      patchProvider.select((state) => state.activePatch.patchData.get(param)),
     );
 
     return Row(
@@ -30,7 +26,7 @@ class ParameterSlider extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 8.0),
-          child: SizedBox(width: 120.0, child: Text('$title: $value')),
+          child: SizedBox(width: 120.0, child: Text('${param.label}: $value')),
         ),
         Expanded(
           child: Slider(
@@ -39,8 +35,9 @@ class ParameterSlider extends ConsumerWidget {
             max: max,
             divisions: (max - min).toInt(),
             label: value.toString(),
-            onChanged: (newValue) =>
-                onChanged(ref.read(patchProvider.notifier), newValue.toInt()),
+            onChanged: (newValue) => ref
+                .read(patchProvider.notifier)
+                .setParam(param, newValue.toInt()),
           ),
         ),
       ],

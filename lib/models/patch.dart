@@ -103,6 +103,53 @@ class RefaceCsPatchData {
     );
   }
 
+  // Raw value of a parameter; selector params return their enum index
+  int get(RefaceCsParam param) => switch (param) {
+    RefaceCsParam.volume => volume,
+    RefaceCsParam.lfoType => lfoType.index,
+    RefaceCsParam.lfoDepth => lfoDepth,
+    RefaceCsParam.lfoSpeed => lfoSpeed,
+    RefaceCsParam.portamento => portamento,
+    RefaceCsParam.oscType => oscType.index,
+    RefaceCsParam.texture => texture,
+    RefaceCsParam.mod => mod,
+    RefaceCsParam.cutoff => cutoff,
+    RefaceCsParam.resonance => resonance,
+    RefaceCsParam.fegAegBalance => fegAegBalance,
+    RefaceCsParam.attack => attack,
+    RefaceCsParam.decay => decay,
+    RefaceCsParam.sustain => sustain,
+    RefaceCsParam.release => release,
+    RefaceCsParam.effectType => effectType.index,
+    RefaceCsParam.effectDepth => effectDepth,
+    RefaceCsParam.effectRate => effectRate,
+  };
+
+  // Copy with one parameter set from its raw value (enum index for selectors)
+  RefaceCsPatchData withParam(RefaceCsParam param, int value) =>
+      switch (param) {
+        RefaceCsParam.volume => copyWith(volume: value),
+        RefaceCsParam.lfoType => copyWith(lfoType: LfoType.values[value]),
+        RefaceCsParam.lfoDepth => copyWith(lfoDepth: value),
+        RefaceCsParam.lfoSpeed => copyWith(lfoSpeed: value),
+        RefaceCsParam.portamento => copyWith(portamento: value),
+        RefaceCsParam.oscType => copyWith(oscType: OscType.values[value]),
+        RefaceCsParam.texture => copyWith(texture: value),
+        RefaceCsParam.mod => copyWith(mod: value),
+        RefaceCsParam.cutoff => copyWith(cutoff: value),
+        RefaceCsParam.resonance => copyWith(resonance: value),
+        RefaceCsParam.fegAegBalance => copyWith(fegAegBalance: value),
+        RefaceCsParam.attack => copyWith(attack: value),
+        RefaceCsParam.decay => copyWith(decay: value),
+        RefaceCsParam.sustain => copyWith(sustain: value),
+        RefaceCsParam.release => copyWith(release: value),
+        RefaceCsParam.effectType => copyWith(
+          effectType: EffectType.values[value],
+        ),
+        RefaceCsParam.effectDepth => copyWith(effectDepth: value),
+        RefaceCsParam.effectRate => copyWith(effectRate: value),
+      };
+
   factory RefaceCsPatchData.fromJson(Map<String, dynamic> json) =>
       _$RefaceCsPatchDataFromJson(json);
   Map<String, dynamic> toJson() => _$RefaceCsPatchDataToJson(this);
@@ -126,4 +173,48 @@ class Patch {
 
   factory Patch.fromJson(Map<String, dynamic> json) => _$PatchFromJson(json);
   Map<String, dynamic> toJson() => _$PatchToJson(this);
+}
+
+// Associate SysEx address, CC number, display name, enum values
+enum RefaceCsParam {
+  volume(0x00, label: 'Volume'),
+  lfoType(0x02, cc: 78, label: 'LFO Assign', options: LfoType.values),
+  lfoDepth(0x03, cc: 77, label: 'LFO Depth'),
+  lfoSpeed(0x04, cc: 76, label: 'LFO Speed'),
+  portamento(0x05, cc: 20, label: 'Portamento'),
+  oscType(0x06, cc: 80, label: 'OSC Type', options: OscType.values),
+  texture(0x07, cc: 81, label: 'OSC Texture'),
+  mod(0x08, cc: 82, label: 'OSC Mod'),
+  cutoff(0x09, cc: 74, label: 'Cutoff'),
+  resonance(0x0A, cc: 71, label: 'Resonance'),
+  fegAegBalance(0x0B, cc: 83, label: 'EG Balance'),
+  attack(0x0C, cc: 73, label: 'Attack'),
+  decay(0x0D, cc: 75, label: 'Decay'),
+  sustain(0x0E, cc: 79, label: 'Sustain'),
+  release(0x0F, cc: 72, label: 'Release'),
+  effectType(0x10, cc: 17, label: 'Effect Type', options: EffectType.values),
+  effectDepth(0x11, cc: 18, label: 'Effect Depth'),
+  effectRate(0x12, cc: 19, label: 'Effect Rate');
+
+  const RefaceCsParam(
+    this.address, {
+    required this.label,
+    this.cc,
+    this.options,
+  });
+
+  final int address;
+  final String label;
+  final int? cc;
+  final List<Enum>? options;
+
+  static final Map<int, RefaceCsParam> _byCc = {
+    for (final param in values)
+      if (param.cc != null) param.cc!: param,
+  };
+
+  static RefaceCsParam? fromCc(int cc) => _byCc[cc];
+
+  // Selectors span 0-127 across 5 options, so about 26 per step
+  int valueFromCc(int ccValue) => options == null ? ccValue : ccValue ~/ 26;
 }
