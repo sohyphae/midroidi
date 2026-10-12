@@ -69,8 +69,8 @@ class PatchNotifier extends StateNotifier<PatchState> {
       next.whenData((event) {
         if (event is PatchDumpReceived) {
           _setPatchData(event.patchData);
-        } else if (event is CcParameterChanged) {
-          handleCcParameter(event.parameter, event.value);
+        } else if (event is ParameterChanged) {
+          setParam(event.param, event.value, sendToSynth: false);
         }
       });
     });
@@ -164,13 +164,6 @@ class PatchNotifier extends StateNotifier<PatchState> {
       _midiService.sendData(
         RefaceCsEncoder.parameterChange(param, patch.get(param)),
       );
-    }
-  }
-
-  void handleCcParameter(int parameter, int value) {
-    final param = RefaceCsParam.fromCc(parameter);
-    if (param != null) {
-      setParam(param, param.valueFromCc(value), sendToSynth: false);
     }
   }
 }

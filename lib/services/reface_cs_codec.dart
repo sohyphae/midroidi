@@ -15,14 +15,14 @@ class PatchDumpReceived extends RefaceCsEvent {
   String toString() => 'PatchDumpReceived(${patchData.toJson()})';
 }
 
-class CcParameterChanged extends RefaceCsEvent {
-  const CcParameterChanged(this.parameter, this.value);
+class ParameterChanged extends RefaceCsEvent {
+  const ParameterChanged(this.param, this.value);
 
-  final int parameter;
+  final RefaceCsParam param;
   final int value;
 
   @override
-  String toString() => 'CcParameterChanged(param: $parameter, value: $value)';
+  String toString() => 'ParameterChanged(${param.name}: $value)';
 }
 
 // App to synth
@@ -111,10 +111,16 @@ class RefaceCsParser {
     if (data.length < 3) {
       return;
     }
-    final controlChangeNumber = data[1];
-    final value = data[2];
-    _eventController.add(CcParameterChanged(controlChangeNumber, value));
+    final param = RefaceCsParam.fromCc(data[1]);
+    if (param == null) {
+      return;
+    }
+    _eventController.add(ParameterChanged(param, _valueFromCc(param, data[2])));
   }
+
+  // Selectors span 0-127 across 5 options, about 26 per step
+  int _valueFromCc(RefaceCsParam param, int ccValue) =>
+      param.options == null ? ccValue : ccValue ~/ 26;
 
   void dispose() {
     _eventController.close();

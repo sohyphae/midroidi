@@ -214,7 +214,4 @@ enum RefaceCsParam {
   };
 
   static RefaceCsParam? fromCc(int cc) => _byCc[cc];
-
-  // Selectors span 0-127 across 5 options, so about 26 per step
-  int valueFromCc(int ccValue) => options == null ? ccValue : ccValue ~/ 26;
 }
