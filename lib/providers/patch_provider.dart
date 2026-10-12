@@ -68,7 +68,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
     _ref.listen(refaceCsEventStreamProvider, (previous, next) {
       next.whenData((event) {
         if (event is PatchDumpReceived) {
-          updateFromBulkDump(event.toneData);
+          _setPatchData(event.patchData);
         } else if (event is CcParameterChanged) {
           handleCcParameter(event.parameter, event.value);
         }
@@ -107,7 +107,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
           RefaceCsPatchData(), // will be overwritten shortly by bulk dump
     );
     state = state.copyWith(activePatch: newPatch);
-    _midiService.requestPatchDump();
+    _midiService.sendData(RefaceCsEncoder.patchDumpRequest);
   }
 
   Future<void> savePatch(String? id, String name) async {
@@ -147,7 +147,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
   void setParam(RefaceCsParam param, int value, {bool sendToSynth = true}) {
     _setPatchData(state.activePatch.patchData.withParam(param, value));
     if (sendToSynth) {
-      _sendSysEx(param.address, value);
+      _midiService.sendData(RefaceCsEncoder.parameterChange(param, value));
     }
   }
 
@@ -158,44 +158,13 @@ class PatchNotifier extends StateNotifier<PatchState> {
     );
   }
 
-  // Base SysEx message for Reface CS parameter change
-  // F0 43 10 7F 1C 03 hh mm ll dd F7
-  final List<int> _baseSysEx = [
-    0xF0, // Start of SysEx
-    0x43, // Yamaha ID
-    0x10, // Device Number
-    0x7F, // Group Number High
-    0x1C, // Group Number Low
-    0x03, // Model ID
-    0x30, // Address High
-    0x00, // Address Mid
-    0x00, // Address Low
-    0x00, // Data
-    0xF7, // End of SysEx
-  ];
-
-  void _sendSysEx(int addressLow, int data) {
-    final message = List<int>.from(_baseSysEx);
-    message[8] = addressLow; // Parameter to change
-    message[9] = data; // Change value
-    _midiService.sendData(message);
-  }
-
   void sendPatchToSynth(RefaceCsPatchData patch) {
     _setPatchData(patch);
     for (final param in RefaceCsParam.values) {
-      _sendSysEx(param.address, patch.get(param));
+      _midiService.sendData(
+        RefaceCsEncoder.parameterChange(param, patch.get(param)),
+      );
     }
-  }
-
-  void updateFromBulkDump(List<int> data) {
-    // note in manual: "[vol] can be set only via MIDI" :| handle with cc later
-    var newPatchData = state.activePatch.patchData;
-    for (final param in RefaceCsParam.values) {
-      newPatchData = newPatchData.withParam(param, data[param.address]);
-    }
-    _setPatchData(newPatchData);
-    print('Patch received and updated from bulk dump');
   }
 
   void handleCcParameter(int parameter, int value) {

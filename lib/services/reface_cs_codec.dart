@@ -1,16 +1,18 @@
 import 'dart:async';
 
+import '../models/patch.dart';
+
 abstract class RefaceCsEvent {
   const RefaceCsEvent();
 }
 
 class PatchDumpReceived extends RefaceCsEvent {
-  const PatchDumpReceived(this.toneData);
+  const PatchDumpReceived(this.patchData);
 
-  final List<int> toneData;
+  final RefaceCsPatchData patchData;
 
   @override
-  String toString() => 'PatchDumpReceived(toneData: ${toneData.length} bytes)';
+  String toString() => 'PatchDumpReceived(${patchData.toJson()})';
 }
 
 class CcParameterChanged extends RefaceCsEvent {
@@ -23,6 +25,29 @@ class CcParameterChanged extends RefaceCsEvent {
   String toString() => 'CcParameterChanged(param: $parameter, value: $value)';
 }
 
+// App to synth
+class RefaceCsEncoder {
+  static List<int> parameterChange(RefaceCsParam param, int value) => [
+    0xF0, // Start of SysEx
+    0x43, // Yamaha ID
+    0x10, // Device Number
+    0x7F, // Group Number High
+    0x1C, // Group Number Low
+    0x03, // Model ID
+    0x30, // Address High
+    0x00, // Address Mid
+    param.address, // Address Low: parameter to change
+    value, // Data
+    0xF7, // End of SysEx
+  ];
+
+  // Request a bulk dump of the synth's current patch
+  static const List<int> patchDumpRequest = [
+    0xF0, 0x43, 0x20, 0x7F, 0x1C, 0x03, 0x0E, 0x0F, 0x00, 0xF7, //
+  ];
+}
+
+// Synth to app
 class RefaceCsParser {
   final List<int> _sysexBuffer = [];
   final StreamController<RefaceCsEvent> _eventController =
@@ -38,8 +63,7 @@ class RefaceCsParser {
 
     if (data.isNotEmpty) {
       if ((data[0] & 0xF0) == 0xB0) {
-        // is a CC message
-        //     // (data[0] & 0xF0) != 0xB0: Masks off the channel nibble and checks the top bits for 0xB0, which is the Control Change status for channels 1–16 (0xB0…0xBF).
+        // Checks top bits for 0xB0, which is the cc status
         _handleControlChange(data);
       } else if (data[0] == 0xF0 || _sysexBuffer.isNotEmpty) {
         _handleSysEx(data);
@@ -65,12 +89,21 @@ class RefaceCsParser {
           _sysexBuffer[8] == 0x30) {
         // this is the bulk dump! extract the relevant data (22 bytes)
         // Tone data starts at index 11 and is 22 bytes long
-        final toneData = List<int>.from(_sysexBuffer.sublist(11, 33));
-        _eventController.add(PatchDumpReceived(toneData));
+        final toneData = _sysexBuffer.sublist(11, 33);
+        _eventController.add(PatchDumpReceived(_decodeToneData(toneData)));
       }
       // clear after processing bulk dump
       _sysexBuffer.clear();
     }
+  }
+
+  // Decode synth SysEx tone data to our patch data
+  RefaceCsPatchData _decodeToneData(List<int> toneData) {
+    var patchData = RefaceCsPatchData();
+    for (final param in RefaceCsParam.values) {
+      patchData = patchData.withParam(param, toneData[param.address]);
+    }
+    return patchData;
   }
 
   void _handleControlChange(List<int> data) {
