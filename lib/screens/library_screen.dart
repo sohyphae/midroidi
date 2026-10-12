@@ -25,7 +25,7 @@ class LibraryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Midroidi Editor'),
+        title: const Text('Midroidi'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(

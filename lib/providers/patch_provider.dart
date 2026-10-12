@@ -1,19 +1,17 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../services/midi_service.dart';
 import '../services/storage_service.dart';
 import '../models/patch.dart';
+import '../services/reface_cs_codec.dart';
+import 'midi_provider.dart';
 
 /*PatchNotifier: patch data model manager
 manage the state of a Reface CS patch (or patch_es_ - upcoming)
 more about what the actual data means
 no info about how connection established / data that is being sent/received / which device is doing thta
 */
-
-// Provider for the MidiService
-final midiServiceProvider = Provider<MidiService>((ref) {
-  return MidiService();
-});
 
 const _uuid = Uuid();
 
@@ -56,13 +54,27 @@ class PatchState {
 
 // StateNotifier for the RefaceCsPatch
 class PatchNotifier extends StateNotifier<PatchState> {
-  PatchNotifier(this._midiService, this._storageService)
+  PatchNotifier(this._ref, this._midiService, this._storageService)
     : super(PatchState.initial()) {
     _loadPatches();
+    _listenToMidiEvents();
   }
 
+  final Ref _ref;
   final MidiService _midiService;
   final StorageService _storageService;
+
+  void _listenToMidiEvents() {
+    _ref.listen(refaceCsEventStreamProvider, (previous, next) {
+      next.whenData((event) {
+        if (event is PatchDumpReceived) {
+          updateFromBulkDump(event.toneData);
+        } else if (event is CcParameterChanged) {
+          handleCcParameter(event.parameter, event.value);
+        }
+      });
+    });
+  }
 
   Future<void> _loadPatches() async {
     final patches = await _storageService.loadPatches();
@@ -427,7 +439,7 @@ class PatchNotifier extends StateNotifier<PatchState> {
   void updateFromBulkDump(List<int> data) {
     final newPatchData = state.activePatch.patchData.copyWith(
       // note in manual: "[vol] can be set only via MIDI" :| handle with cc later
-      volume: data[0], // not working
+      volume: data[0],
       lfoType: LfoType.values[data[2]],
       lfoDepth: data[3],
       lfoSpeed: data[4],
@@ -450,33 +462,68 @@ class PatchNotifier extends StateNotifier<PatchState> {
     final newActivePatch = state.activePatch.copyWith(patchData: newPatchData);
 
     state = state.copyWith(activePatch: newActivePatch);
+    print('Patch received and updated from bulk dump');
+  }
 
-    print('''
-        Active patch: 
-          Volume: ${state.activePatch.patchData.volume},
-          LFO Type: ${state.activePatch.patchData.lfoType},
-          LFO Depth: ${state.activePatch.patchData.lfoDepth},
-          LFO Speed: ${state.activePatch.patchData.lfoSpeed},
-          Portamento: ${state.activePatch.patchData.portamento},
-          OSC Type: ${state.activePatch.patchData.oscType},
-          Texture: ${state.activePatch.patchData.texture},
-          Mod: ${state.activePatch.patchData.mod},
-          Cutoff: ${state.activePatch.patchData.cutoff},
-          Resonance: ${state.activePatch.patchData.resonance},
-          EG Balance: ${state.activePatch.patchData.fegAegBalance},
-          Attack: ${state.activePatch.patchData.attack},
-          Decay: ${state.activePatch.patchData.decay},
-          Sustain: ${state.activePatch.patchData.sustain},
-          Release: ${state.activePatch.patchData.release},
-          Effect Type: ${state.activePatch.patchData.effectType},
-          Effect Depth: ${state.activePatch.patchData.effectDepth},
-          Effect Rate: ${state.activePatch.patchData.effectRate},
-        ''');
+  void handleCcParameter(int parameter, int value) {
+    switch (parameter) {
+      case 78:
+        updateLfoAssignState(LfoType.values[value ~/ 26]);
+        break;
+      case 77:
+        updateLfoDepthState(value);
+        break;
+      case 76:
+        updateLfoSpeedState(value);
+        break;
+      case 20:
+        updatePortamentoState(value);
+        break;
+      case 80:
+        updateOscTypeState(OscType.values[value ~/ 26]);
+        break;
+      case 81:
+        updateOscTextureState(value);
+        break;
+      case 82:
+        updateOscModState(value);
+        break;
+      case 74:
+        updateCutoffState(value);
+        break;
+      case 71:
+        updateResonanceState(value);
+        break;
+      case 83:
+        updateEgBalanceState(value);
+        break;
+      case 73:
+        updateEgAttackState(value);
+        break;
+      case 75:
+        updateEgDecayState(value);
+        break;
+      case 79:
+        updateEgSustainState(value);
+        break;
+      case 72:
+        updateEgReleaseState(value);
+        break;
+      case 17:
+        updateEffectTypeState(EffectType.values[value ~/ 26]);
+        break;
+      case 18:
+        updateEffectDepthState(value);
+        break;
+      case 19:
+        updateEffectRateState(value);
+        break;
+    }
   }
 }
 
 final patchProvider = StateNotifierProvider<PatchNotifier, PatchState>((ref) {
   final midiService = ref.watch(midiServiceProvider);
   final storageService = StorageService();
-  return PatchNotifier(midiService, storageService);
+  return PatchNotifier(ref, midiService, storageService);
 });

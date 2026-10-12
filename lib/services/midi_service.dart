@@ -1,6 +1,12 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Provider for the MidiService
+final midiServiceProvider = Provider<MidiService>((ref) {
+  return MidiService();
+});
 
 class MidiService {
   final MidiCommand _midiCommand = MidiCommand();
@@ -32,7 +38,8 @@ class MidiService {
     _midiCommand.sendData(Uint8List.fromList(data));
   }
 
-  // request bulk dump of the current patch from the reface
+  // request bulk dump of the current patch
+  // ** Reface CS specific for now
   void requestPatchDump() {
     sendData([0xF0, 0x43, 0x20, 0x7F, 0x1C, 0x03, 0x0E, 0x0F, 0x00, 0xF7]);
   }
